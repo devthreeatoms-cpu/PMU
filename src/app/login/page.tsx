@@ -80,7 +80,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
       
       <div className="container mx-auto px-4 py-20 flex justify-center">
@@ -123,13 +123,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
-                  className="h-12 border-zinc-300 focus:ring-amber-500 focus:border-amber-500"
+                  className="h-12 border-zinc-300 focus:ring-brand-gold focus:border-brand-gold"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="#" className="text-xs text-amber-600 hover:underline font-medium">
+                  <Link href="#" className="text-xs text-brand-gold hover:underline font-medium">
                     Forgot password?
                   </Link>
                 </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required 
-                  className="h-12 border-zinc-300 focus:ring-amber-500 focus:border-amber-500"
+                  className="h-12 border-zinc-300 focus:ring-brand-gold focus:border-brand-gold"
                 />
               </div>
               <Button 
@@ -154,7 +154,7 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col gap-4">
             <div className="text-center text-sm text-zinc-600">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="text-amber-600 hover:underline font-bold">
+              <Link href="/register" className="text-brand-gold hover:underline font-bold">
                 Create Account
               </Link>
             </div>

@@ -74,7 +74,7 @@ export default function AdminReferralsPage() {
                        <TableCell className="px-8">
                          <div className="flex flex-col">
                            <span className="text-xs font-bold text-zinc-900">{ref.agent}</span>
-                           <span className="text-[11px] font-black text-amber-500 tracking-widest uppercase">{ref.code}</span>
+                           <span className="text-[11px] font-black text-brand-gold tracking-widest uppercase">{ref.code}</span>
                          </div>
                        </TableCell>
                        <TableCell>
@@ -91,7 +91,7 @@ export default function AdminReferralsPage() {
                        </TableCell>
                        <TableCell className="text-xs font-black text-zinc-900">{ref.earnings}</TableCell>
                        <TableCell>
-                         <Badge className={`rounded-full px-3 py-1 font-bold text-[9px] uppercase tracking-tighter border ${ref.status === 'Elite' ? 'bg-amber-50 text-amber-600 border-amber-100' : ref.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-zinc-100 text-zinc-400 border-zinc-200'}`}>
+                         <Badge className={`rounded-full px-3 py-1 font-bold text-[9px] uppercase tracking-tighter border ${ref.status === 'Elite' ? 'bg-brand-rose/10 text-brand-gold border-brand-rose/30' : ref.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-zinc-100 text-zinc-400 border-zinc-200'}`}>
                            {ref.status}
                          </Badge>
                        </TableCell>

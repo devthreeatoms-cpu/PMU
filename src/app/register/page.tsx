@@ -56,7 +56,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
       
       <div className="container mx-auto px-4 py-20 flex justify-center">
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required 
-                  className="h-12 border-zinc-300 focus:ring-amber-500"
+                  className="h-12 border-zinc-300 focus:ring-brand-gold"
                 />
               </div>
               <div className="space-y-2">
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
-                  className="h-12 border-zinc-300 focus:ring-amber-500"
+                  className="h-12 border-zinc-300 focus:ring-brand-gold"
                 />
               </div>
               <div className="space-y-2">
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required 
-                  className="h-12 border-zinc-300 focus:ring-amber-500"
+                  className="h-12 border-zinc-300 focus:ring-brand-gold"
                 />
               </div>
               <Button 
@@ -115,7 +115,7 @@ export default function RegisterPage() {
           <CardFooter className="flex flex-col gap-4">
             <div className="text-center text-sm text-zinc-600">
               Already have an account?{" "}
-              <Link href="/login" className="text-amber-600 hover:underline font-bold">
+              <Link href="/login" className="text-brand-gold hover:underline font-bold">
                 Sign In
               </Link>
             </div>

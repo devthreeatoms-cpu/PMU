@@ -49,7 +49,7 @@ export default function AdminLayout({
           <div className="h-16 flex items-center px-6 border-b border-zinc-200">
             <Link href="/admin" className="font-bold text-xl tracking-tight uppercase">
               PMU
-              <span className="text-zinc-500 font-normal"> ADMIN</span>
+              <span className="text-brand-gold font-normal"> ADMIN</span>
             </Link>
           </div>
           
@@ -83,7 +83,7 @@ export default function AdminLayout({
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100 px-3 py-1 rounded-full border">
                 Secure Session
               </span>
-              <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-xs font-bold text-amber-400 border border-zinc-700">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-xs font-bold text-brand-gold border border-zinc-700">
                 {initials}
               </div>
             </div>
@@ -103,8 +103,8 @@ function NavItem({ href, icon, label, active }: { href: string; icon: React.Reac
       href={href}
       className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
         active 
-          ? "bg-zinc-900 text-amber-400" 
-          : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+          ? "bg-brand-rose text-white" 
+          : "text-zinc-700 hover:bg-brand-cream hover:text-zinc-900"
       }`}
     >
       {icon}

@@ -7,29 +7,29 @@ import Link from "next/link";
 
 export default function AffiliatePage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
       {/* Hero Visual */}
-      <section className="relative min-h-[60vh] flex items-center overflow-hidden bg-brand-black">
+      <section className="relative min-h-[60vh] flex items-center overflow-hidden bg-brand-rose">
         <div className="absolute inset-0 z-0">
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-50"
+            className="absolute inset-0 bg-cover bg-center opacity-20"
             style={{ backgroundImage: 'url("/images/landing/collection-hero.png")' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-black via-brand-black/60 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-rose via-brand-rose/60 to-transparent z-10" />
         </div>
         
         <div className="container mx-auto px-4 relative z-20">
           <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-left-12 duration-1000">
             <div className="space-y-4">
-              <span className="text-brand-gold text-[10px] font-bold tracking-[0.6em] uppercase">Partnership Program</span>
-              <h1 className="text-5xl md:text-8xl font-heading text-white leading-none">
+              <span className="text-brand-black text-[10px] font-bold tracking-[0.6em] uppercase">Partnership Program</span>
+              <h1 className="text-5xl md:text-8xl font-heading text-brand-black leading-none">
                 Join the <br/>
-                <span className="italic text-brand-gold">Master Network</span>
+                <span className="italic text-white">Master Network</span>
               </h1>
             </div>
-            <p className="text-zinc-400 text-xl font-light italic max-w-xl leading-relaxed">
+            <p className="text-brand-black/70 text-xl font-light italic max-w-xl leading-relaxed">
               Monetize your artistry by partnering with PMU SUPPLY. Earn industry-leading commissions while providing your community with elite PMU supplies.
             </p>
             <div className="flex flex-wrap gap-6 pt-4">
@@ -44,7 +44,7 @@ export default function AffiliatePage() {
       </section>
 
       {/* Program Benefits */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-brand-cream">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-12 xl:gap-24">
             <BenefitCard 
@@ -67,7 +67,7 @@ export default function AffiliatePage() {
       </section>
 
       {/* How it Works - Editorial Design */}
-      <section className="py-32 bg-zinc-50 overflow-hidden">
+      <section className="py-32 bg-brand-cream/50 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
             <div className="relative group p-2 ring-1 ring-zinc-200 rounded-[3rem]">
@@ -103,7 +103,7 @@ export default function AffiliatePage() {
       </section>
 
       {/* Final Call to Action */}
-      <section className="py-24 bg-white text-center">
+      <section className="py-24 bg-brand-cream text-center">
         <div className="container mx-auto px-4 max-w-3xl space-y-8">
            <div className="flex items-center justify-center gap-1 mb-4">
               {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-brand-gold text-brand-gold" />)}
@@ -114,7 +114,7 @@ export default function AffiliatePage() {
            </p>
            <div className="pt-8">
              <Link href="https://af.uppromote.com/pmu-supply/register">
-               <Button size="lg" className="h-16 bg-brand-black text-white hover:bg-brand-gold px-12 rounded-full font-bold tracking-[0.4em] text-[10px] transition-all shadow-xl">
+               <Button size="lg" className="h-16 bg-brand-rose text-white hover:bg-brand-gold px-12 rounded-full font-bold tracking-[0.4em] text-[10px] transition-all shadow-xl">
                  APPLY TO THE NETWORK
                </Button>
              </Link>
@@ -128,7 +128,7 @@ export default function AffiliatePage() {
 function BenefitCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
     <div className="space-y-6 group">
-      <div className="w-20 h-20 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-white transition-all duration-700 shadow-sm group-hover:shadow-2xl group-hover:shadow-brand-gold/20">
+      <div className="w-20 h-20 bg-white/40 rounded-[2rem] border border-brand-rose/20 flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-white transition-all duration-700 shadow-sm group-hover:shadow-2xl group-hover:shadow-brand-gold/20">
         {icon}
       </div>
       <div className="space-y-3">

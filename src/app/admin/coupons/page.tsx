@@ -294,7 +294,7 @@ export default function AdminCouponsPage() {
                 <TableRow key={coupon.id} className="hover:bg-zinc-50/50 transition-colors group">
                   <TableCell className="px-8">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center text-amber-500 shadow-lg">
+                      <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center text-brand-gold shadow-lg">
                         <Ticket className="w-4 h-4" />
                       </div>
                       <span className="text-xs font-black tracking-widest text-zinc-900 group-hover:text-brand-gold transition-colors">{coupon.code}</span>

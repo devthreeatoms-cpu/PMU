@@ -14,23 +14,23 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
       {/* Cinematic Header */}
-      <section className="relative h-[40vh] min-h-[300px] flex items-center overflow-hidden bg-brand-black">
+      <section className="relative h-[40vh] min-h-[300px] flex items-center overflow-hidden bg-brand-rose">
         <div className="absolute inset-0 z-0">
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-30 grayscale"
+            className="absolute inset-0 bg-cover bg-center opacity-20"
             style={{ backgroundImage: 'url("/images/landing/collection-hero.png")' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-rose via-transparent to-transparent z-10" />
         </div>
         <div className="container mx-auto px-4 relative z-20">
           <div className="max-w-2xl space-y-4">
-            <span className="text-brand-gold text-[10px] font-bold tracking-[0.5em] uppercase">Connect With Us</span>
-            <h1 className="text-5xl md:text-7xl font-heading text-white">Contact <span className="italic text-brand-gold">Hub</span></h1>
-            <p className="text-zinc-400 font-light italic max-w-lg">
+            <span className="text-brand-black text-[10px] font-bold tracking-[0.5em] uppercase">Connect With Us</span>
+            <h1 className="text-5xl md:text-7xl font-heading text-brand-black">Contact <span className="italic text-white">Hub</span></h1>
+            <p className="text-brand-black/70 font-light italic max-w-lg">
               Our master support team is here to assist with product inquiries, technical specifications, and shipping details.
             </p>
           </div>
@@ -73,7 +73,7 @@ export default function ContactPage() {
               </div>
 
               {/* FAQ Preview Card */}
-              <div className="p-10 bg-zinc-50 rounded-[3rem] border border-zinc-100 space-y-6 relative overflow-hidden group">
+              <div className="p-10 bg-white/40 rounded-[3rem] border border-brand-rose/20 space-y-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 rounded-full blur-3xl group-hover:bg-brand-gold/10 transition-colors" />
                 <h4 className="font-heading italic text-2xl leading-tight">Frequently <br/>Requested <span className="text-brand-gold">Intel</span></h4>
                 <p className="text-zinc-400 text-sm font-light leading-relaxed italic">
@@ -113,7 +113,7 @@ export default function ContactPage() {
                       className="w-full bg-zinc-50 border-none rounded-[2rem] p-6 focus:ring-2 focus:ring-brand-gold/20 min-h-[160px] text-zinc-600 outline-none transition-all placeholder:italic placeholder:text-zinc-300"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-16 bg-brand-black text-white hover:bg-brand-gold rounded-full font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-2xl shadow-brand-gold/10">
+                  <Button type="submit" className="w-full h-16 bg-brand-rose text-white hover:bg-brand-gold rounded-full font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-2xl shadow-brand-gold/10">
                     TRANSMIT INQUIRY
                   </Button>
                 </form>

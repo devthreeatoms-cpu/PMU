@@ -5,18 +5,18 @@ import { Award, Heart, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react"
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
       {/* Cinematic Philosophy Hero */}
-      <section className="relative py-40 bg-zinc-900 overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-40">
+      <section className="relative py-40 bg-brand-rose overflow-hidden">
+        <div className="absolute inset-0 z-0 opacity-20">
            <video 
             autoPlay 
             loop 
             muted 
             playsInline 
-            className="absolute inset-0 w-full h-full object-cover grayscale"
+            className="absolute inset-0 w-full h-full object-cover"
           >
             <source src="https://assets.mixkit.co/videos/preview/mixkit-glitter-particles-moving-in-a-black-background-4217-large.mp4" type="video/mp4" />
           </video>
@@ -25,10 +25,10 @@ export default function AboutPage() {
         
         <div className="container mx-auto px-4 relative z-20 text-center max-w-4xl space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000">
           <div className="space-y-4">
-            <span className="text-brand-gold text-[10px] font-bold tracking-[0.8em] uppercase">Our Philosophy</span>
-            <h1 className="text-6xl md:text-8xl font-heading text-zinc-900 italic leading-none">
+            <span className="text-brand-black text-[10px] font-bold tracking-[0.8em] uppercase">Our Philosophy</span>
+            <h1 className="text-6xl md:text-8xl font-heading text-brand-black italic leading-none">
               The Artisan <br/>
-              <span className="text-brand-gold not-italic font-sans font-black tracking-widest uppercase">Mission</span>
+              <span className="text-white not-italic font-sans font-black tracking-widest uppercase">Mission</span>
             </h1>
           </div>
           <p className="text-zinc-500 text-xl font-light italic leading-relaxed max-w-2xl mx-auto">
@@ -83,7 +83,7 @@ export default function AboutPage() {
       </section>
 
       {/* Legacy Section */}
-      <section className="py-24 bg-zinc-50 border-y border-zinc-100">
+      <section className="py-24 bg-white/40 border-y border-brand-rose/20">
         <div className="container mx-auto px-4 text-center max-w-3xl space-y-8">
            <Sparkles className="w-8 h-8 text-brand-gold mx-auto" />
            <h2 className="text-4xl font-heading italic">A Legacy of <span className="text-brand-gold">Trust</span></h2>
@@ -95,7 +95,7 @@ export default function AboutPage() {
                 <p className="text-3xl font-heading text-zinc-900 tracking-tighter">5.0</p>
                 <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">Artist Rating</p>
               </div>
-              <div className="h-12 w-px bg-zinc-200" />
+              <div className="h-12 w-px bg-brand-rose/30" />
               <div className="text-center">
                 <p className="text-3xl font-heading text-zinc-900 tracking-tighter">150k+</p>
                 <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">Artists Reached</p>
@@ -110,7 +110,7 @@ export default function AboutPage() {
 function PhilosophyItem({ title, desc, icon }: { title: string, desc: string, icon: React.ReactNode }) {
   return (
     <div className="flex gap-6 items-start group">
-      <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-brand-gold group-hover:bg-brand-black group-hover:text-white transition-all duration-500">
+      <div className="w-12 h-12 rounded-2xl bg-white/60 border border-brand-rose/20 flex items-center justify-center text-brand-gold group-hover:bg-brand-black group-hover:text-white transition-all duration-500">
         {icon}
       </div>
       <div className="space-y-1">

@@ -50,7 +50,7 @@ export default function HomePage() {
 
   if (!mounted || loading || !user) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold"></div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function HomePage() {
   const userName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || "Artist";
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       {/* Marquee Announcement Bar */}
       {announcement && (
         <div className="bg-brand-rose text-brand-black py-2 overflow-hidden border-b border-brand-gold/20">
@@ -91,7 +91,7 @@ export default function HomePage() {
           
           <div className="space-y-8">
             {/* Artist Tray Sidebar */}
-            <div className="bg-zinc-50 rounded-[2.5rem] p-8 border border-zinc-100 shadow-sm">
+            <div className="bg-white/40 rounded-[2.5rem] p-8 border border-brand-rose/20 shadow-sm">
               <h3 className="text-xl font-heading mb-6">Your Artist Tray</h3>
               <div className="space-y-6">
                 <p className="text-zinc-500 text-sm font-light italic">Frequently ordered tools for your studio.</p>

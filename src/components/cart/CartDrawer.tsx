@@ -90,7 +90,7 @@ export function CartDrawer() {
             <p className="text-[9px] text-zinc-400 tracking-widest uppercase text-center italic">Complimentary luxury shipping over $150</p>
             <div className="grid gap-3">
               <Link href="/checkout" onClick={() => setIsOpen(false)}>
-                <Button className="w-full h-14 bg-brand-black hover:bg-brand-gold text-white text-[10px] font-bold tracking-[0.3em] uppercase rounded-none transition-all duration-500 shadow-xl shadow-brand-gold/10">
+                <Button className="w-full h-14 bg-brand-rose hover:bg-brand-gold text-brand-black text-[10px] font-bold tracking-[0.3em] uppercase rounded-none transition-all duration-500 shadow-xl shadow-brand-gold/10">
                   SECURE CHECKOUT
                 </Button>
               </Link>

@@ -42,7 +42,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       {announcement && (
         <div className="bg-brand-rose text-brand-black py-2 overflow-hidden border-b border-brand-gold/20">
           <div className="animate-marquee whitespace-nowrap flex gap-10">
@@ -68,9 +68,9 @@ export default function Home() {
       {/* Nano Brow Class Banner */}
       <section className="mt-24 mb-12 overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-zinc-100 flex flex-col lg:flex-row min-h-[500px]">
+          <div className="bg-white rounded-[3rem] overflow-hidden shadow-2xl border border-brand-rose/20 flex flex-col lg:flex-row min-h-[500px]">
             {/* Text Side */}
-            <div className="flex-1 p-10 md:p-16 lg:p-20 flex flex-col justify-center space-y-8 bg-brand-cream/30">
+            <div className="flex-1 p-10 md:p-16 lg:p-20 flex flex-col justify-center space-y-8 bg-brand-cream/50">
               <div className="space-y-4">
                 <span className="text-brand-gold text-[10px] font-bold tracking-[0.5em] uppercase">Limited Opportunity</span>
                 <h2 className="text-4xl md:text-6xl font-heading leading-tight text-brand-black">Nano Combo Brow <br/>Class is now LIVE!</h2>
@@ -169,7 +169,7 @@ export default function Home() {
       
       {/* Featured Section */}
       {/* Organic Smoothie Skin Treatment Section - Modernized */}
-      <section className="py-24 bg-[#FAF7F2] overflow-hidden">
+      <section className="py-24 bg-brand-cream overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 space-y-8 animate-in fade-in slide-in-from-left-8 duration-1000">
@@ -271,8 +271,8 @@ export default function Home() {
       </section>
 
       {/* Brand Values Strip - Refined */}
-      <section className="bg-white py-20 border-y border-brand-gold/10 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(201,168,76,0.05),transparent_70%)]" />
+      <section className="bg-brand-cream py-20 border-y border-brand-gold/10 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(248,184,200,0.05),transparent_70%)]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
             <ValueItem title="100% Vegan" desc="Ethically Sourced Purity" icon={<CheckCircle2 className="w-8 h-8 text-brand-gold" />} />
@@ -284,7 +284,7 @@ export default function Home() {
       </section>
 
       {/* Instagram Artistry Showcase - New */}
-      <section className="py-24 bg-zinc-50 border-b border-brand-gold/10">
+      <section className="py-24 bg-brand-cream border-b border-brand-gold/10">
         <div className="container mx-auto px-4 space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-end gap-6">
             <div className="space-y-2">
@@ -318,7 +318,7 @@ export default function Home() {
       </section>
 
       {/* Featured Artist / Testimonial - New */}
-      <section className="py-24 bg-white overflow-hidden relative">
+      <section className="py-24 bg-brand-cream overflow-hidden relative">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 items-center gap-16 lg:gap-24">
             <div className="relative group ring-1 ring-zinc-200 p-2 rounded-[2.5rem]">
@@ -374,7 +374,7 @@ export default function Home() {
 
 
       {/* Newsletter Signup */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-brand-cream">
         <div className="container mx-auto px-4 max-w-2xl text-center space-y-8">
           <h2 className="text-3xl font-heading">Join the PMU SUPPLY Circle</h2>
           <p className="text-zinc-500 font-light italic">"Get 10% off your first order and exclusive access to new launches."</p>
@@ -420,7 +420,7 @@ function CollectionCard({ title, href, image, count }: { title: string, href: st
 function ValueItem({ title, desc, icon }: { title: string, desc: string, icon: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center text-center space-y-4 group">
-      <div className="w-16 h-16 rounded-full border border-zinc-100 flex items-center justify-center bg-white shadow-sm group-hover:border-brand-gold group-hover:shadow-[0_0_20px_rgba(201,168,76,0.1)] transition-all duration-500">
+      <div className="w-16 h-16 rounded-full border border-zinc-100 flex items-center justify-center bg-white shadow-sm group-hover:border-brand-gold group-hover:shadow-[0_0_20px_rgba(248,184,200,0.1)] transition-all duration-500">
         {icon}
       </div>
       <div className="space-y-1">

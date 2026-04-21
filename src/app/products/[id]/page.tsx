@@ -74,7 +74,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
       <div className="relative">
@@ -91,7 +91,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             
             {/* Gallery Column */}
             <div className="space-y-8 sticky top-32">
-              <div className="relative aspect-[4/5] rounded-[4rem] overflow-hidden bg-zinc-50 border border-zinc-100 shadow-2xl group">
+              <div className="relative aspect-[4/5] rounded-[4rem] overflow-hidden bg-white/40 border border-brand-rose/20 shadow-2xl group">
                 <div 
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-[4s] group-hover:scale-105"
                   style={{ backgroundImage: `url("${product.imageUrls[0]}")` }}
@@ -112,15 +112,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
               {/* Minimalist Tech Bar */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-6 rounded-3xl border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-3 text-center">
+                <div className="p-6 rounded-3xl border border-brand-rose/10 bg-white/40 flex flex-col items-center gap-3 text-center">
                    <Zap className="w-5 h-5 text-brand-gold" />
                    <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-zinc-400">High Precision</span>
                 </div>
-                <div className="p-6 rounded-3xl border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-3 text-center">
+                <div className="p-6 rounded-3xl border border-brand-rose/10 bg-white/40 flex flex-col items-center gap-3 text-center">
                    <ShieldCheck className="w-5 h-5 text-brand-gold" />
                    <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-zinc-400">Sterilized</span>
                 </div>
-                <div className="p-6 rounded-3xl border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-3 text-center">
+                <div className="p-6 rounded-3xl border border-brand-rose/10 bg-white/40 flex flex-col items-center gap-3 text-center">
                    <Droplet className="w-5 h-5 text-brand-gold" />
                    <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-zinc-400">Optimized Flow</span>
                 </div>
@@ -158,8 +158,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         onClick={() => setSelectedVariant(v.id)}
                         className={`p-6 text-left rounded-3xl border transition-all duration-500 ${
                           selectedVariant === v.id 
-                          ? 'bg-brand-black border-brand-black text-white shadow-xl translate-x-1' 
-                          : 'bg-white border-zinc-100 text-zinc-400 hover:border-brand-gold hover:text-brand-gold'
+                          ? 'bg-brand-gold text-white shadow-xl translate-x-1' 
+                          : 'bg-white/60 border-brand-rose/10 text-zinc-400 hover:border-brand-gold hover:text-brand-gold'
                         }`}
                       >
                          <p className="text-[8px] font-bold tracking-widest uppercase opacity-60 mb-2">{v.type}</p>
@@ -173,7 +173,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {/* Action Area */}
               <div className="pt-12 border-t border-zinc-100 space-y-8">
                 <div className="flex flex-col sm:flex-row gap-6">
-                  <div className="flex items-center bg-zinc-50 rounded-full px-6 h-16 border border-zinc-100">
+                  <div className="flex items-center bg-white/40 rounded-full px-6 h-16 border border-brand-rose/20">
                     <button 
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="p-2 text-zinc-400 hover:text-brand-black transition-colors"
@@ -192,7 +192,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Button 
                     onClick={handleAddToCart}
                     disabled={product.variants && product.variants.length > 0 && !selectedVariant}
-                    className="flex-1 h-16 bg-brand-black text-white hover:bg-brand-gold rounded-full font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-2xl disabled:opacity-30"
+                    className="flex-1 h-16 bg-brand-rose text-brand-black hover:bg-brand-gold hover:text-white rounded-full font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-2xl disabled:opacity-30"
                   >
                     ACQUIRE FOR — ${(currentPrice * quantity).toFixed(2)}
                   </Button>
@@ -221,7 +221,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Usage / Pro Tips Accordion-style Area */}
-              <div className="p-8 bg-zinc-50 rounded-[3rem] border border-zinc-100 flex items-start gap-4 space-y-1">
+              <div className="p-8 bg-white/40 rounded-[3rem] border border-brand-rose/20 flex items-start gap-4 space-y-1">
                  <Info className="w-5 h-5 text-brand-gold mt-1" />
                  <div>
                    <h4 className="font-bold text-[10px] tracking-widest uppercase text-zinc-900">Master's Guide</h4>
@@ -236,7 +236,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Curation Rail */}
-        <section className="py-32 bg-zinc-50 border-t border-zinc-100">
+        <section className="py-32 bg-brand-cream border-t border-brand-rose/10">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16 px-4">
               <div className="space-y-4">

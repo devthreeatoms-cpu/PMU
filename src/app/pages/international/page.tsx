@@ -5,33 +5,33 @@ import { Globe, AlertTriangle, ShieldCheck, Truck, Scale } from "lucide-react";
 
 export default function InternationalPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
       {/* Modern Disclaimer Hero */}
-      <section className="relative py-32 bg-brand-black overflow-hidden">
+      <section className="relative py-32 bg-brand-rose overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-30 grayscale"
+            className="absolute inset-0 bg-cover bg-center opacity-20"
             style={{ backgroundImage: 'url("/images/landing/collection-hero.png")' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-rose via-brand-rose/80 to-transparent z-10" />
         </div>
         
         <div className="container mx-auto px-4 relative z-20 text-center max-w-4xl space-y-8 animate-in fade-in zoom-in duration-1000">
-          <span className="text-brand-gold text-[10px] font-bold tracking-[0.6em] uppercase">Global Logistics</span>
-          <h1 className="text-5xl md:text-8xl font-heading text-white italic">
+          <span className="text-brand-black text-[10px] font-bold tracking-[0.6em] uppercase">Global Logistics</span>
+          <h1 className="text-5xl md:text-8xl font-heading text-brand-black italic">
             International <br/>
-            <span className="text-brand-gold not-italic font-sans font-black tracking-widest uppercase">Shipping</span>
+            <span className="text-white not-italic font-sans font-black tracking-widest uppercase">Shipping</span>
           </h1>
-          <p className="text-zinc-400 text-lg font-light italic leading-relaxed">
+          <p className="text-brand-black/70 text-lg font-light italic leading-relaxed">
             Essential protocols and disclaimers for professional artisans ordering outside of the United States.
           </p>
         </div>
       </section>
 
       {/* Protocol Content */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-brand-cream">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto space-y-16">
             
@@ -48,7 +48,7 @@ export default function InternationalPage() {
                />
             </div>
 
-            <div className="p-12 bg-zinc-50 rounded-[4rem] border border-zinc-100 space-y-8">
+            <div className="p-12 bg-white/40 rounded-[4rem] border border-brand-rose/20 space-y-8">
                <div className="flex items-center gap-4">
                  <Scale className="w-6 h-6 text-brand-gold" />
                  <h2 className="text-2xl font-heading italic">Product <span className="text-brand-gold">Compliance</span></h2>
@@ -99,9 +99,9 @@ function DisclaimerSection({ icon, title, content }: { icon: React.ReactNode, ti
 
 function ProtocolCard({ label, value }: { label: string, value: string }) {
   return (
-    <div className="p-10 border border-zinc-100 rounded-[2.5rem] text-center space-y-2 group hover:bg-brand-black transition-all duration-500">
+    <div className="p-10 border border-zinc-100 rounded-[2.5rem] text-center space-y-2 group hover:bg-brand-rose/20 transition-all duration-500">
       <p className="text-[9px] font-bold tracking-[0.4em] uppercase text-zinc-400 group-hover:text-brand-gold">{label}</p>
-      <p className="text-sm font-heading tracking-wide italic text-zinc-900 group-hover:text-white">{value}</p>
+      <p className="text-sm font-heading tracking-wide italic text-zinc-900">{value}</p>
     </div>
   );
 }

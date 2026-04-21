@@ -38,11 +38,11 @@ export function ModernHero() {
         
         {/* Soft Beauty Glows - Updated for Light Theme */}
         <div className="absolute inset-0 bg-gradient-to-r from-brand-cream via-brand-cream/80 to-transparent z-10" />
-        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_50%,rgba(212,175,55,0.05),transparent_70%)] z-10" />
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_50%,rgba(248,184,200,0.05),transparent_70%)] z-10" />
         
         <div 
           className="absolute inset-0 opacity-[0.05] z-10" 
-          style={{ backgroundImage: 'radial-gradient(#D4AF37 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+          style={{ backgroundImage: 'radial-gradient(#F8B8C8 1px, transparent 1px)', backgroundSize: '40px 40px' }}
         />
       </div>
 
@@ -64,7 +64,7 @@ export function ModernHero() {
                   <span className="text-4xl md:text-6xl xl:text-7xl font-sans font-black tracking-[0.25em] uppercase leading-none text-transparent bg-clip-text bg-gradient-to-br from-brand-black via-zinc-600 to-zinc-400">
                     PRECISION
                   </span>
-                  <span className="text-7xl md:text-9xl xl:text-[11rem] font-heading font-normal italic tracking-tighter text-brand-gold leading-[0.75] mt-[-0.1em] drop-shadow-[0_20px_40px_rgba(212,175,55,0.2)]">
+                   <span className="text-7xl md:text-9xl xl:text-[11rem] font-heading font-normal italic tracking-tighter text-brand-gold leading-[0.75] mt-[-0.1em] drop-shadow-[0_20px_40px_rgba(248,184,200,0.2)]">
                     PMU
                   </span>
                 </h1>
@@ -72,7 +72,7 @@ export function ModernHero() {
 
               <div className="relative max-w-md group">
                 <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-brand-gold/40 to-transparent" />
-                <div className="absolute left-[-2px] bottom-0 w-1 h-1 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(201,168,76,0.6)]" />
+                <div className="absolute left-[-2px] bottom-0 w-1 h-1 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(248,184,200,0.6)]" />
                 
                 <p className="text-zinc-600 text-xs md:text-sm font-light italic tracking-[0.15em] leading-relaxed pl-8 py-1">
                   "Enter the vault of <span className="text-brand-black font-semibold uppercase tracking-widest text-[10px]">unlimited possibilities.</span> From revolutionary <span className="text-brand-gold font-medium">E95 Machines</span> to our signature <span className="text-brand-gold font-medium">Organic Pigments</span>—we supply everything an elite PMU artist needs."

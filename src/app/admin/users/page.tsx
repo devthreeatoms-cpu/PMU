@@ -105,7 +105,7 @@ export default function AdminUsersPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard title="Total Artists" value={isLoading ? "..." : users.length.toString()} icon={<UsersIcon className="w-4 h-4" />} />
         <MetricCard title="Verified Artists" value={isLoading ? "..." : users.filter(u => u.role !== "admin").length.toString()} icon={<ShieldCheck className="w-4 h-4 text-emerald-500" />} />
-        <MetricCard title="Total Loyalty Pts" value={isLoading ? "..." : users.reduce((a, u) => a + (u.points || 0), 0).toLocaleString()} icon={<Coins className="w-4 h-4 text-amber-500" />} />
+        <MetricCard title="Total Loyalty Pts" value={isLoading ? "..." : users.reduce((a, u) => a + (u.points || 0), 0).toLocaleString()} icon={<Coins className="w-4 h-4 text-brand-gold" />} />
         <MetricCard title="Admin Accounts" value={isLoading ? "..." : users.filter(u => u.role === "admin").length.toString()} icon={<ArrowUpRight className="w-4 h-4 text-emerald-500" />} />
       </div>
 
@@ -168,13 +168,13 @@ export default function AdminUsersPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`rounded-full px-3 py-1 font-bold text-[8px] uppercase tracking-tighter border ${user.role === "admin" ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
+                    <Badge className={`rounded-full px-3 py-1 font-bold text-[8px] uppercase tracking-tighter border ${user.role === "admin" ? "bg-brand-rose/10 text-brand-gold border-brand-rose/30" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
                       {user.role}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Coins className="w-3 h-3 text-amber-500" />
+                      <Coins className="w-3 h-3 text-brand-gold" />
                       <span className="text-xs font-bold text-zinc-900">{(user.points || 0).toLocaleString()}</span>
                     </div>
                   </TableCell>
@@ -223,7 +223,7 @@ export default function AdminUsersPage() {
 
                             <div className="space-y-4">
                               <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2 ml-1">
-                                <Coins className="w-3 h-3 text-amber-500" /> Manual Points Adjustment
+                                <Coins className="w-3 h-3 text-brand-gold" /> Manual Points Adjustment
                               </Label>
                               <div className="flex gap-2">
                                 <Input 
