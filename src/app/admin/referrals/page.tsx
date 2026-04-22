@@ -39,11 +39,10 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { 
-  getReferralSettings, 
-  updateReferralSettings, 
-  getReferralAuditData, 
-  DEFAULT_REFERRAL_SETTINGS 
-} from "@/lib/services/admin";
+  getReferralSettingsAction, 
+  updateReferralSettingsAction, 
+  getReferralAuditDataAction 
+} from "./actions";
 import { ReferralSettings } from "@/lib/types";
 
 export default function AdminReferralsPage() {
@@ -56,12 +55,14 @@ export default function AdminReferralsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [s, n] = await Promise.all([
-          getReferralSettings(),
-          getReferralAuditData()
+        const [sRes, nRes] = await Promise.all([
+          getReferralSettingsAction(),
+          getReferralAuditDataAction()
         ]);
-        setSettings(s);
-        setNetworkData(n);
+        
+        if (sRes.success && sRes.settings) setSettings(sRes.settings);
+        if (nRes.success && nRes.networkData) setNetworkData(nRes.networkData);
+        
       } catch (error) {
         console.error("Failed to fetch referral data:", error);
       } finally {
@@ -74,8 +75,12 @@ export default function AdminReferralsPage() {
   const handleUpdateSettings = async () => {
     setIsSaving(true);
     try {
-      await updateReferralSettings(settings);
-      toast.success("Referral Algorithm committed to cloud.");
+      const res = await updateReferralSettingsAction(settings);
+      if (res.success) {
+        toast.success("Referral Algorithm committed to cloud.");
+      } else {
+        toast.error(res.error || "Failed to update settings");
+      }
     } catch (error) {
       toast.error("Failed to update settings");
     } finally {

@@ -37,8 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
-import { getAllUsers, adjustUserPoints, getUserTransactions } from "@/lib/services/admin";
+import { getAllUsersAction, adjustUserPointsAction, getUserTransactionsAction } from "./actions";
 import { UserProfile, PointTransaction } from "@/lib/types";
 
 export default function AdminUsersPage() {
@@ -55,8 +54,12 @@ export default function AdminUsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const data = await getAllUsers();
-        setUsers(data);
+        const res = await getAllUsersAction();
+        if (res.success && res.users) {
+          setUsers(res.users);
+        } else {
+          toast.error(res.error || "Failed to fetch artists");
+        }
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
@@ -69,8 +72,10 @@ export default function AdminUsersPage() {
   const fetchTransactions = async (uid: string) => {
     setIsPointsLoading(true);
     try {
-      const data = await getUserTransactions(uid);
-      setTransactions(data);
+      const res = await getUserTransactionsAction(uid);
+      if (res.success && res.transactions) {
+        setTransactions(res.transactions);
+      }
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
     } finally {
@@ -87,16 +92,20 @@ export default function AdminUsersPage() {
     
     setIsPointsLoading(true);
     try {
-      await adjustUserPoints(selectedUser.uid, delta, adjustmentReason);
-      toast.success(`${delta > 0 ? "+" : ""}${delta} points applied.`);
-      
-      // Refresh user and history
-      const data = await getAllUsers();
-      setUsers(data);
-      fetchTransactions(selectedUser.uid);
-      
-      setPointAdjustment("");
-      setAdjustmentReason("");
+      const res = await adjustUserPointsAction(selectedUser.uid, delta, adjustmentReason);
+      if (res.success) {
+        toast.success(`${delta > 0 ? "+" : ""}${delta} points applied.`);
+        
+        // Refresh user and history
+        const res2 = await getAllUsersAction();
+        if (res2.success && res2.users) setUsers(res2.users);
+        fetchTransactions(selectedUser.uid);
+        
+        setPointAdjustment("");
+        setAdjustmentReason("");
+      } else {
+        toast.error(res.error || "Failed to update points");
+      }
     } catch (error) {
       toast.error("Failed to update points");
     } finally {

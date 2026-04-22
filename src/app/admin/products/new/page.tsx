@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,22 +23,14 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { createProductAction } from "../actions";
 
-const CATEGORIES: ProductCategory[] = [
-  "Machines & Power Supplies",
-  "Needles",
-  "Pigments",
-  "Practice Materials",
-  "Aftercare",
-  "Anesthetic/Numbing",
-  "Shaping Tools",
-  "Lashes",
-  "Other"
-];
+import { getCategoriesAction } from "../category-actions";
 
 export default function AddProductPage() {
   const { uploadImage, isUploading } = useImageUpload();
   const router = useRouter();
   
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -51,6 +43,17 @@ export default function AddProductPage() {
   
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const res = await getCategoriesAction();
+      if (res.success && res.categories) {
+        setCategories(res.categories);
+      }
+      setIsLoadingCategories(false);
+    }
+    loadCategories();
+  }, []);
 
   const handleExternalImageAdd = () => {
     const url = window.prompt("Paste the image URL:");
@@ -226,11 +229,11 @@ export default function AddProductPage() {
                   required
                 >
                   <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -10,36 +10,45 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getProducts, getShopAllSettings, DEFAULT_SHOP_ALL_SETTINGS } from "@/lib/services/admin";
 import { Product, ShopAllSettings } from "@/lib/types";
+import { Pagination } from "@/components/ui/pagination";
 
-// Normalized Category Mapping
-const CATEGORY_MAP: Record<string, string> = {
-  "machines": "Machines & Power Supplies",
-  "needles": "Needles",
-  "pigments": "Pigments",
-  "numbing": "Anesthetic/Numbing",
-  "practice": "Practice Materials",
-  "lashes": "Lashes",
-  "aftercare": "Aftercare",
-};
+import { getCategoriesAction } from "@/app/admin/products/category-actions";
+
+const ITEMS_PER_PAGE = 12;
 
 function ProductGrid() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [settings, setSettings] = useState<ShopAllSettings>(DEFAULT_SHOP_ALL_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch products first so they appear immediately
       try {
-        const productsData = await getProducts();
+        const [productsData, categoriesRes] = await Promise.all([
+          getProducts(),
+          getCategoriesAction()
+        ]);
+        
         setProducts(productsData);
+        if (categoriesRes.success && categoriesRes.categories) {
+          setCategories(categoriesRes.categories);
+        }
       } catch (error) {
-        console.error("Failed to fetch products:", error);
+        console.error("Failed to fetch shop data:", error);
       }
 
-      // Fetch settings independently
       try {
         const settingsData = await getShopAllSettings();
         setSettings(settingsData);
@@ -52,11 +61,34 @@ function ProductGrid() {
     fetchData();
   }, []);
 
+  // Reset to page 1 when category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryParam]);
+
   const filteredProducts = useMemo(() => {
     if (!categoryParam || categoryParam === "all") return products;
-    const mappedCategory = CATEGORY_MAP[categoryParam] || categoryParam;
-    return products.filter((p) => p.category === mappedCategory);
-  }, [categoryParam, products]);
+    
+    // Find the category name that matches this slug
+    const targetCategory = categories.find(c => slugify(c.name) === categoryParam);
+    const categoryName = targetCategory ? targetCategory.name : categoryParam;
+
+    return products.filter((p) => p.category === categoryName);
+  }, [categoryParam, products, categories]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+  }, [filteredProducts, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const activeCategoryName = useMemo(() => {
     if (!categoryParam || categoryParam === "all") return "All Products";
@@ -111,12 +143,12 @@ function ProductGrid() {
 
       {/* Grid */}
       <div 
-        className={`grid ${gridColsMobile} sm:grid-cols-2 ${gridColsDesktop} mb-24`}
+        className={`grid ${gridColsMobile} sm:grid-cols-2 ${gridColsDesktop} mb-12`}
         style={{ 
           gap: `${settings.grid.gap}px`,
         }}
       >
-        {filteredProducts.map((product) => (
+        {paginatedProducts.map((product) => (
           <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer flex flex-col space-y-4">
             <div 
               className="relative overflow-hidden bg-white border border-zinc-100 flex items-center justify-center p-0"
@@ -184,6 +216,13 @@ function ProductGrid() {
           </div>
         )}
       </div>
+
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        className="mb-12"
+      />
     </>
   );
 }
@@ -203,11 +242,6 @@ export default function ProductsPage() {
         <Suspense fallback={<div className="py-20 text-center">Loading collection...</div>}>
           <ProductGrid />
         </Suspense>
-
-        <div className="flex justify-center items-center gap-6 py-12">
-          <span className="text-[11px] font-bold border-b border-zinc-900 pb-0.5">1</span>
-          <span className="text-[11px] font-light text-zinc-400">›</span>
-        </div>
       </div>
 
       <Footer />

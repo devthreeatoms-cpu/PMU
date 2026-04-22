@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   LineChart, 
   Line, 
@@ -26,47 +26,32 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-// Mock Data for the Dashboard
-const SALES_DATA = [
-  { date: "Oct 1", revenue: 4200, orders: 12 },
-  { date: "Oct 5", revenue: 3800, orders: 10 },
-  { date: "Oct 10", revenue: 5100, orders: 15 },
-  { date: "Oct 15", revenue: 4800, orders: 14 },
-  { date: "Oct 20", revenue: 6200, orders: 18 },
-  { date: "Oct 25", revenue: 5900, orders: 16 },
-  { date: "Oct 30", revenue: 7500, orders: 22 },
-];
-
-const RECENT_ORDERS = [
-  { id: "PMU-8902", customer: "Sarah Johnson", date: "2 mins ago", total: "$235.00", status: "Pending" },
-  { id: "PMU-8901", customer: "Michael Chen", date: "15 mins ago", total: "$1,240.00", status: "Paid" },
-  { id: "PMU-8900", customer: "Elena Rodriguez", date: "1 hour ago", total: "$89.50", status: "Processing" },
-  { id: "PMU-8899", customer: "Dr. Amara Okoro", date: "3 hours ago", total: "$450.00", status: "Paid" },
-];
-
-const LOW_STOCK_ITEMS = [
-  { name: "V3 Nano Cartridge 0.30mm", stock: 3, sku: "NC-30-V3" },
-  { name: "Organic Black M90 Pigment", stock: 2, sku: "PG-OR-M90" },
-  { name: "Booms Butter 50ml", stock: 5, sku: "AB-BB-50" },
-];
-
-import { getDashboardStats, seedDatabase, getProducts } from "@/lib/services/admin";
+import { getDashboardStatsAction } from "./actions";
+import { seedDatabase, getProducts } from "@/lib/services/admin";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [hasProducts, setHasProducts] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const dashboardData = await getDashboardStats();
-      setStats(dashboardData);
-      
-      const products = await getProducts();
-      setHasProducts(products.length > 0);
+      setIsLoading(true);
+      try {
+        const res = await getDashboardStatsAction();
+        if (res.success) {
+          setStats(res.stats);
+        }
+        
+        const products = await getProducts();
+        setHasProducts(products.length > 0);
+      } catch (err) {
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchData();
   }, []);
@@ -85,24 +70,37 @@ export default function AdminDashboard() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="py-40 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold mx-auto" />
+        <p className="mt-4 text-zinc-400 font-bold uppercase tracking-widest text-[10px]">Syncing live analytics...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-heading font-normal">Console Overview</h1>
           <p className="text-zinc-500 text-sm mt-1">Real-time performance metrics and system health.</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleSeed} 
-            disabled={isInitializing}
-            variant="outline"
-            className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-full text-[10px] font-bold tracking-widest uppercase"
-          >
-            {isInitializing ? "Seeding..." : "Refresh Seed Data"}
-          </Button>
+          {!hasProducts && (
+             <Button 
+               onClick={handleSeed} 
+               disabled={isInitializing}
+               variant="outline"
+               className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-full text-[10px] font-bold tracking-widest uppercase"
+             >
+               {isInitializing ? "Seeding..." : "Bootstrap Products"}
+             </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-full text-[10px] font-bold tracking-widest uppercase">Export CSV</Button>
-          <Button size="sm" className="bg-brand-gold hover:bg-brand-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase">Live View</Button>
+          <Link href="/admin/orders">
+            <Button size="sm" className="bg-zinc-900 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-6">Live View</Button>
+          </Link>
         </div>
       </div>
 
@@ -111,7 +109,7 @@ export default function AdminDashboard() {
         <KPICard 
           title="Total Revenue" 
           value={stats ? `$${stats.totalRevenue.toLocaleString()}` : "$0"} 
-          trend="+20.1%" 
+          trend="+18.2%" 
           trendUp={true} 
           icon={<DollarSign className="w-4 h-4" />} 
           description="vs last month"
@@ -122,76 +120,74 @@ export default function AdminDashboard() {
           trend="+12.5%" 
           trendUp={true} 
           icon={<ShoppingCart className="w-4 h-4" />} 
-          description="vs last month"
+          description="Real-time"
         />
         <KPICard 
           title="Active Artists" 
-          value="--" 
+          value={stats ? stats.activeArtists : "0"} 
           trend="+5.1%" 
           trendUp={true} 
           icon={<Users className="w-4 h-4" />} 
-          description="Live from DB"
+          description="Unique customers"
         />
         <KPICard 
-          title="Conversion Rate" 
-          value="3.42%" 
-          trend="-2.1%" 
-          trendUp={false} 
+          title="Total Platform Users" 
+          value={stats ? stats.totalUsers : "0"} 
+          trend="+22.4%" 
+          trendUp={true} 
           icon={<TrendingUp className="w-4 h-4" />} 
-          description="avg session value"
+          description="Registered accounts"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-7">
         {/* Main Chart */}
-        <Card className="lg:col-span-4 border-zinc-200 shadow-sm rounded-[2rem] overflow-hidden">
+        <Card className="lg:col-span-4 border-zinc-200 shadow-sm rounded-[2.5rem] overflow-hidden bg-white">
           <CardHeader className="p-8 pb-4">
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-lg font-heading">Revenue Growth</CardTitle>
-                <CardDescription className="text-xs uppercase tracking-widest font-bold text-zinc-400 mt-1">Last 30 Days Growth Analytics</CardDescription>
-              </div>
-              <div className="flex gap-1">
-                 <button className="px-3 py-1 bg-zinc-100 rounded-full text-[9px] font-black uppercase">Revenue</button>
-                 <button className="px-3 py-1 text-zinc-400 hover:bg-zinc-50 rounded-full text-[9px] font-black uppercase">Orders</button>
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-800">Revenue Growth</CardTitle>
+                <CardDescription className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mt-1">Daily Analytics (Last 30 Days)</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-8 pt-0">
             <div className="h-[300px] w-full mt-6">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={SALES_DATA}>
+                <AreaChart data={stats?.salesData || []}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#C9A84C" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#C9A84C" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#FF4D8D" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#FF4D8D" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f5" />
                   <XAxis 
                     dataKey="date" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fontSize: 10, fill: '#888'}} 
+                    tick={{fontSize: 9, fill: '#999', fontWeight: 600}} 
                     dy={10}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{fontSize: 10, fill: '#888'}}
+                    tick={{fontSize: 9, fill: '#999', fontWeight: 600}}
                     tickFormatter={(value) => `$${value}`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}
+                    contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', padding: '15px' }}
+                    itemStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', color: '#FF4D8D' }}
+                    labelStyle={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '5px', color: '#333' }}
                   />
                   <Area 
                     type="monotone" 
                     dataKey="revenue" 
-                    stroke="#C9A84C" 
+                    stroke="#FF4D8D" 
                     strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#colorRev)" 
+                    animationDuration={2000}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -202,56 +198,62 @@ export default function AdminDashboard() {
         {/* Status Feed */}
         <div className="lg:col-span-3 space-y-6">
           {/* Low Stock Alerts */}
-          <Card className="border-red-100 bg-red-50/10 rounded-[2rem] overflow-hidden">
-            <CardHeader className="pb-4">
+          <Card className="border-red-50 bg-red-50/10 rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-8 pb-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-red-600">Critical Stock Alerts</CardTitle>
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-red-600">Critical Stock Alerts</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {LOW_STOCK_ITEMS.map((item) => (
-                <div key={item.sku} className="flex items-center justify-between p-3 bg-white border border-red-100 rounded-2xl">
+            <CardContent className="p-8 pt-0 space-y-4">
+              {stats?.lowStockItems?.length > 0 ? stats.lowStockItems.map((item: any) => (
+                <div key={item.sku} className="flex items-center justify-between p-4 bg-white border border-red-50 rounded-2xl shadow-sm">
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-zinc-900">{item.name}</p>
                     <p className="text-[10px] text-zinc-400 font-mono uppercase">{item.sku}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-black text-red-600 uppercase">{item.stock} LEFT</p>
-                    <Link href="/admin/products" className="text-[9px] font-bold text-zinc-400 hover:text-brand-gold underline underline-offset-4">RESTOCK</Link>
+                    <Link href={`/admin/products`} className="text-[9px] font-bold text-zinc-400 hover:text-brand-gold underline underline-offset-4 tracking-widest uppercase">Manage</Link>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="py-8 text-center bg-white border border-dashed border-zinc-200 rounded-2xl">
+                   <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Inventory Levels Healthy</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Recent Orders List */}
-          <Card className="rounded-[2.5rem] border-zinc-200 shadow-sm overflow-hidden">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-800">Recent Activity</CardTitle>
+          <Card className="rounded-[2.5rem] border-zinc-100 shadow-sm overflow-hidden bg-white">
+            <CardHeader className="p-8 pb-4">
+              <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-zinc-800">Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {RECENT_ORDERS.map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 hover:border-brand-gold transition-colors group cursor-pointer">
+            <CardContent className="p-8 pt-0 space-y-4">
+              {stats?.recentOrders?.length > 0 ? stats.recentOrders.map((order: any) => (
+                <Link href={`/admin/orders/${order.id}`} key={order.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 hover:border-brand-vibrant-pink/30 hover:bg-pink-50/30 transition-all group cursor-pointer">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] font-bold border border-zinc-200">
-                      {order.customer.split(' ').map(n => n[0]).join('')}
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] font-bold border border-zinc-200 uppercase text-zinc-400">
+                      {order.shippingAddress?.firstName?.[0] || 'U'}{order.shippingAddress?.lastName?.[0] || 'A'}
                     </div>
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-zinc-900">{order.customer}</p>
+                      <p className="text-xs font-bold text-zinc-900">{order.shippingAddress?.firstName || 'Anonymos'} {order.shippingAddress?.lastName || 'User'}</p>
                       <div className="flex items-center gap-2 text-[10px] text-zinc-400">
                         <Clock className="w-3 h-3" />
-                        {order.date}
+                        {new Date(order.createdAt).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-black text-zinc-900">{order.total}</p>
-                    <span className="text-[9px] font-bold text-brand-gold uppercase tracking-tighter shadow-sm">{order.status}</span>
+                    <p className="text-xs font-black text-zinc-900">${(order.total || 0).toFixed(2)}</p>
+                    <span className="text-[9px] font-bold text-[#FF4D8D] uppercase tracking-tighter">{order.status}</span>
                   </div>
-                </div>
-              ))}
-              <Link href="/admin/orders" className="flex items-center justify-center gap-2 text-[10px] font-black text-zinc-400 hover:text-brand-black transition-colors pt-2 uppercase">
+                </Link>
+              )) : (
+                <div className="py-8 text-center text-[10px] font-bold text-zinc-300 uppercase tracking-widest">No Recent Activity</div>
+              )}
+              <Link href="/admin/orders" className="flex items-center justify-center gap-2 text-[10px] font-black text-zinc-400 hover:text-brand-black transition-colors pt-2 uppercase tracking-widest">
                  View All Merchant Activity <ExternalLink className="w-3 h-3" />
               </Link>
             </CardContent>

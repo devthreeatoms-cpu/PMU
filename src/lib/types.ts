@@ -87,6 +87,7 @@ export interface Order {
   taxAmount: number;
   total: number;
   couponId?: string;
+  couponCode?: string;
   couponDiscountAmount?: number;
   pointsDiscountAmount?: number;
   referralCodeUsed?: string;

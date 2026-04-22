@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { getProductsAction, deleteProductAction } from "./actions";
 import { Pagination } from "@/components/ui/pagination";
+import CategoryManager from "./CategoryManager";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -70,19 +71,19 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-zinc-500 mt-2">
-            {isLoading ? "Loading catalog..." : `${products.length} product${products.length !== 1 ? "s" : ""} in catalog.`}
-          </p>
+          <h1 className="text-[2rem] font-heading font-normal tracking-tight text-zinc-900">Professional Catalog</h1>
+          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Refining Professional Standards</p>
         </div>
-        <Link href="/admin/products/new">
-          <button className="btn-luxury-active">
-            <Plus size={16} />
-            Add Product
-          </button>
-        </Link>
+        <div className="flex gap-3">
+          <CategoryManager />
+          <Link href="/admin/products/new">
+            <Button className="bg-zinc-900 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-8 h-10">
+              <Plus className="h-3.5 w-3.5 mr-2" /> Add Product
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="border rounded-md bg-white dark:bg-zinc-950">

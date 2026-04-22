@@ -7,18 +7,34 @@ import { useCartStore } from "@/store/useCartStore";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { getCategoriesAction } from "@/app/admin/products/category-actions";
 import { useRouter } from "next/navigation";
-
 
 export function Navbar() {
   const { getCartCount, setIsOpen } = useCartStore();
   const { user, logout } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     setMounted(true);
+    async function loadCategories() {
+      const res = await getCategoriesAction();
+      if (res.success && res.categories) {
+        setCategories(res.categories);
+      }
+    }
+    loadCategories();
   }, []);
+
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
 
   const handleLogout = async () => {
     try {
@@ -55,20 +71,13 @@ export function Navbar() {
             </button>
             <div className="absolute top-full left-0 w-64 bg-white border border-zinc-100 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 z-[100] rounded-xl overflow-hidden">
               <div className="py-2">
-                {[
-                  { label: "Machines & Power", href: "/products?category=machines" },
-                  { label: "Needles", href: "/products?category=needles" },
-                  { label: "Pigments", href: "/products?category=pigments" },
-                  { label: "Numbing", href: "/products?category=numbing" },
-                  { label: "Practice", href: "/products?category=practice" },
-                  { label: "Lashes", href: "/products?category=lashes" },
-                ].map((item) => (
+                {categories.map((cat) => (
                   <Link 
-                    key={item.label}
-                    href={item.href}
+                    key={cat.id}
+                    href={`/products?category=${slugify(cat.name)}`}
                     className="block px-6 py-3 text-[10px] text-zinc-600 hover:bg-brand-rose hover:text-brand-black transition-colors"
                   >
-                    {item.label}
+                    {cat.name}
                   </Link>
                 ))}
               </div>

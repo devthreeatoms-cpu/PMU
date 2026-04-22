@@ -21,23 +21,15 @@ import {
 import { ProductCategory, Product } from "@/lib/types";
 import { getProductAction, updateProductAction } from "../actions";
 
-const CATEGORIES: ProductCategory[] = [
-  "Machines & Power Supplies",
-  "Needles",
-  "Pigments",
-  "Practice Materials",
-  "Aftercare",
-  "Anesthetic/Numbing",
-  "Shaping Tools",
-  "Lashes",
-  "Other"
-];
+import { getCategoriesAction } from "../category-actions";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
   const { uploadImage, isUploading } = useImageUpload();
   const router = useRouter();
   
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -51,6 +43,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const res = await getCategoriesAction();
+      if (res.success && res.categories) {
+        setCategories(res.categories);
+      }
+      setIsLoadingCategories(false);
+    }
+    loadCategories();
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -250,11 +253,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     onValueChange={(val) => setFormData({...formData, category: val || ""})}
                   >
                     <SelectTrigger id="category" className="h-12 bg-zinc-50/50 border-zinc-100 text-xs">
-                      <SelectValue placeholder="Select sector" />
+                      <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select sector"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name} className="text-xs">{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

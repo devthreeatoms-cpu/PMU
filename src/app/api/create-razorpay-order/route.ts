@@ -113,6 +113,7 @@ export async function POST(req: Request) {
       taxAmount: tax,
       total: total,
       couponId: couponId,
+      couponCode: couponCode || null,
       status: 'pending',
       shippingAddress: shippingAddress,
       createdAt: Date.now(),

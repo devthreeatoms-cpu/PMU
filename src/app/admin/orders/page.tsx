@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { getOrders, updateOrderStatus } from "@/lib/services/admin";
+import { getOrdersAction, updateOrderStatusAction } from "./actions";
 import { Order } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -51,8 +51,12 @@ export default function AdminOrdersPage() {
     const fetchOrders = async () => {
       setIsLoading(true);
       try {
-        const data = await getOrders(filterStatus === "all" ? undefined : filterStatus);
-        setOrders(data);
+        const res = await getOrdersAction(filterStatus === "all" ? undefined : filterStatus);
+        if (res.success && res.orders) {
+          setOrders(res.orders);
+        } else {
+          toast.error(res.error || "Failed to fetch orders");
+        }
       } catch (error) {
         console.error("Failed to fetch orders:", error);
       } finally {
@@ -64,10 +68,14 @@ export default function AdminOrdersPage() {
 
   const handleStatusUpdate = async (orderId: string, status: Order["status"]) => {
     try {
-      await updateOrderStatus(orderId, status);
-      toast.success(`Order updated to "${status}"`);
-      const data = await getOrders(filterStatus === "all" ? undefined : filterStatus);
-      setOrders(data);
+      const res = await updateOrderStatusAction(orderId, status);
+      if (res.success) {
+        toast.success(`Order updated to "${status}"`);
+        const res2 = await getOrdersAction(filterStatus === "all" ? undefined : filterStatus);
+        if (res2.success && res2.orders) setOrders(res2.orders);
+      } else {
+        toast.error(res.error || "Failed to update order status");
+      }
     } catch (error) {
       toast.error("Failed to update order status");
     }
@@ -80,47 +88,63 @@ export default function AdminOrdersPage() {
       order.id?.toLowerCase().includes(term) ||
       order.userId?.toLowerCase().includes(term) ||
       order.shippingAddress?.firstName?.toLowerCase().includes(term) ||
-      order.shippingAddress?.lastName?.toLowerCase().includes(term)
+      order.shippingAddress?.lastName?.toLowerCase().includes(term) ||
+      order.shippingAddress?.email?.toLowerCase().includes(term)
     );
   }, [orders, searchTerm]);
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterStatus("all");
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-heading font-normal">Order Management</h1>
           <p className="text-zinc-500 text-sm mt-1">Efficiently manage status, fulfillment, and customer inquiries.</p>
         </div>
         <div className="flex gap-2">
+          {(searchTerm || filterStatus !== "all") && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters}
+              className="rounded-full text-[10px] font-bold tracking-widest uppercase gap-2 text-zinc-400 hover:text-zinc-600"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-full text-[10px] font-bold tracking-widest uppercase gap-2">
             <Download className="w-3 h-3" /> Export List
           </Button>
-          <Button size="sm" className="bg-brand-gold hover:bg-brand-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase">
+          <Button size="sm" className="bg-zinc-900 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-6">
             Create Manual Order
           </Button>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row gap-4 p-4 bg-white border border-zinc-100 rounded-[2rem] shadow-sm">
+      <div className="flex flex-col md:flex-row gap-4 p-4 bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <Input 
-            placeholder="Search by Order ID or customer name..." 
-            className="pl-10 h-11 border-zinc-100 rounded-2xl focus:ring-brand-gold/20 focus:border-brand-gold bg-zinc-50"
+            placeholder="Search by Order ID, customer, or email..." 
+            className="pl-12 h-12 border-zinc-100 rounded-2xl focus:ring-brand-vibrant-pink/10 focus:border-brand-vibrant-pink/30 bg-zinc-50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           {STATUS_FILTERS.map(s => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
-              className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+              className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${
                 filterStatus === s 
-                  ? "bg-brand-gold text-white shadow" 
-                  : "bg-zinc-50 text-zinc-400 border border-zinc-100 hover:border-brand-gold hover:text-brand-gold"
+                  ? "bg-[#FF4D8D] text-white shadow-lg shadow-pink-200" 
+                  : "bg-zinc-50 text-zinc-400 border border-zinc-100 hover:border-brand-vibrant-pink/30 hover:text-brand-vibrant-pink"
               }`}
             >
               {s}
