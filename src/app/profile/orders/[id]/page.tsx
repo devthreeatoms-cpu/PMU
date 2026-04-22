@@ -62,7 +62,10 @@ export default function OrderDetailsPage() {
 
         // Fetch Products for images
         const prodData = await getProducts();
-        const prodMap = prodData.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+        const prodMap: Record<string, Product> = {};
+        prodData.forEach(p => {
+          if (p.id) prodMap[p.id] = p;
+        });
         setProducts(prodMap);
       } catch (err) {
         console.error("Order fetch failed:", err);
@@ -230,10 +233,10 @@ export default function OrderDetailsPage() {
                     <span className="text-zinc-400 font-light">Tax (GST)</span>
                     <span className="font-bold font-mono">${order.taxAmount?.toFixed(2)}</span>
                   </div>
-                  {(order.discountAmount > 0 || order.couponDiscountAmount > 0) && (
+                  {(order.discountAmount > 0 || (order.couponDiscountAmount || 0) > 0) && (
                     <div className="flex justify-between text-xs text-emerald-400">
                       <span className="font-light">Applied Incentives</span>
-                      <span className="font-bold font-mono">-${(order.discountAmount + order.couponDiscountAmount).toFixed(2)}</span>
+                      <span className="font-bold font-mono">-${(order.discountAmount + (order.couponDiscountAmount || 0)).toFixed(2)}</span>
                     </div>
                   )}
                 </div>

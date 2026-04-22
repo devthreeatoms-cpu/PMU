@@ -45,7 +45,10 @@ export default function ProfilePage() {
     const fetchInitialData = async () => {
       try {
         const prodData = await getProducts();
-        const prodMap = prodData.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+        const prodMap: Record<string, Product> = {};
+        prodData.forEach(p => {
+          if (p.id) prodMap[p.id] = p;
+        });
         setProducts(prodMap);
       } catch (e) {
         console.error("Products fetch failed:", e);

@@ -87,6 +87,8 @@ export interface Order {
   taxAmount: number;
   total: number;
   couponId?: string;
+  couponDiscountAmount?: number;
+  pointsDiscountAmount?: number;
   referralCodeUsed?: string;
   pointsEarned: number;
   pointsUsed: number;
@@ -95,6 +97,7 @@ export interface Order {
   shippingAddress: {
     firstName: string;
     lastName: string;
+    email: string;
     address: string;
     city: string;
     zipCode: string;
@@ -102,6 +105,8 @@ export interface Order {
     phone: string;
   };
   stripePaymentIntentId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   createdAt: number;
   updatedAt: number;
 }
