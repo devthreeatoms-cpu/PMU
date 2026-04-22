@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import { getAllUsersAction, adjustUserPointsAction, getUserTransactionsAction } from "./actions";
 import { UserProfile, PointTransaction } from "@/lib/types";
 
