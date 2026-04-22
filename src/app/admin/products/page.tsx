@@ -17,11 +17,15 @@ import { Product } from "@/lib/types";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { getProductsAction, deleteProductAction } from "./actions";
+import { Pagination } from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -57,6 +61,13 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -67,10 +78,10 @@ export default function AdminProductsPage() {
           </p>
         </div>
         <Link href="/admin/products/new">
-          <Button className="w-full sm:w-auto gap-2">
+          <button className="btn-luxury-active">
             <Plus size={16} />
             Add Product
-          </Button>
+          </button>
         </Link>
       </div>
 
@@ -103,7 +114,7 @@ export default function AdminProductsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
+              paginatedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     <div className="w-12 h-12 rounded-md overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0">
@@ -144,9 +155,11 @@ export default function AdminProductsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900" disabled>
+                    <Link href={`/admin/products/${product.id}`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-brand-vibrant-pink transition-colors">
                         <Pencil size={14} />
                       </Button>
+                    </Link>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -167,6 +180,12 @@ export default function AdminProductsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

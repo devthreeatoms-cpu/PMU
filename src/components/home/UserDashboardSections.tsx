@@ -55,10 +55,24 @@ export function LoggedInHeader({ name }: { name: string | null }) {
 
 
 export function SimpleStatStrip() {
+  const { profile, loading } = useAuth();
+  
   const stats = [
-    { label: "PMU SUPPLY POINTS", value: "1,250", icon: <Star className="h-4 w-4 text-brand-gold" /> },
-    { label: "ACTIVE ORDERS", value: "1", icon: <Package className="h-4 w-4 text-brand-gold" /> },
-    { label: "WALLET BALANCE", value: "$45.00", icon: <CreditCard className="h-4 w-4 text-brand-gold" /> },
+    { 
+      label: "PMU SUPPLY POINTS", 
+      value: loading ? "..." : (profile?.points || 0).toLocaleString(), 
+      icon: <Star className="h-4 w-4 text-brand-gold" /> 
+    },
+    { 
+      label: "DISCOUNT POWER", 
+      value: loading ? "..." : `$${((profile?.points || 0) / 100).toFixed(2)}`, 
+      icon: <CreditCard className="h-4 w-4 text-brand-gold" /> 
+    },
+    { 
+      label: "TOTAL REFERRALS", 
+      value: loading ? "..." : (profile?.referralCount || 0).toString(), 
+      icon: <User className="h-4 w-4 text-brand-gold" /> 
+    },
   ];
 
   return (
@@ -66,7 +80,7 @@ export function SimpleStatStrip() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {stats.map((stat, idx) => (
-            <div key={idx} className="flex items-center gap-4 group cursor-pointer hover:bg-zinc-50 p-4 transition-colors">
+            <div key={idx} className="flex items-center gap-4 group cursor-pointer hover:bg-zinc-50 p-4 transition-colors border-r border-zinc-50 last:border-0">
               <div className="h-12 w-12 rounded-full bg-brand-gold/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                 {stat.icon}
               </div>

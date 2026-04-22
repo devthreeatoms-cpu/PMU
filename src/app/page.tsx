@@ -16,15 +16,21 @@ import { useRouter } from "next/navigation";
 import { getCouponsAction } from "@/app/admin/coupons/actions";
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   const router = useRouter();
   const [announcement, setAnnouncement] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      router.push("/home");
+      setIsRedirecting(true);
+      if (isAdmin) {
+        router.replace("/admin/dashboard");
+      } else {
+        router.replace("/home");
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, isAdmin, router]);
 
   useEffect(() => {
     // Fetch coupon descriptions for the marquee
@@ -40,6 +46,18 @@ export default function Home() {
       }
     }).catch(() => {});
   }, []);
+
+  // If loading or redirecting, show a clean luxury loader to maintain premium feel
+  if (loading || user || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold"></div>
+          <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-brand-gold animate-pulse">Authenticating Artistry</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-brand-cream">

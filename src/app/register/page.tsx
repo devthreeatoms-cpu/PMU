@@ -19,7 +19,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithGoogle } = useAuth();
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {

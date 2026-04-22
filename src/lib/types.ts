@@ -26,6 +26,7 @@ export interface Product {
   shortDescription?: string;
   price: number;
   salePrice?: number;
+  sku?: string;
   category: ProductCategory | string;
   stock: number;     // Total stock if no variants, otherwise sum of variants
   imageUrls: string[];
@@ -131,4 +132,21 @@ export interface ShopAllSettings {
     padding: number;
     borderRadius: number;
   };
+}
+
+export interface ReferralSettings {
+  referrerRewardPoints: number;
+  refereeDiscountPercentage: number;
+  referralRequirement: 'first_purchase' | 'every_purchase';
+  maxEarningsPerUser: number;
+  isActive: boolean;
+}
+
+export interface PointTransaction {
+  id: string;
+  amount: number;
+  type: 'earn' | 'redeem' | 'admin_adjust' | 'referral_bonus';
+  reason: string;
+  adminId?: string;
+  createdAt: number;
 }

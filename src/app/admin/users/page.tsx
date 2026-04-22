@@ -13,7 +13,8 @@ import {
   History,
   Coins,
   ArrowUpRight,
-  UserPlus
+  UserPlus,
+  Calendar
 } from "lucide-react";
 import { 
   Table, 
@@ -37,8 +38,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getAllUsers, adjustUserPoints } from "@/lib/services/admin";
-import { UserProfile } from "@/lib/types";
+import { getAllUsers, adjustUserPoints, getUserTransactions } from "@/lib/services/admin";
+import { UserProfile, PointTransaction } from "@/lib/types";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -46,6 +47,10 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [pointAdjustment, setPointAdjustment] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [transactions, setTransactions] = useState<PointTransaction[]>([]);
+  const [isPointsLoading, setIsPointsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -61,19 +66,41 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
+  const fetchTransactions = async (uid: string) => {
+    setIsPointsLoading(true);
+    try {
+      const data = await getUserTransactions(uid);
+      setTransactions(data);
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
+    } finally {
+      setIsPointsLoading(false);
+    }
+  };
+
   const handleAdjustPoints = async () => {
-    if (!selectedUser || !pointAdjustment) return;
+    if (!selectedUser || !pointAdjustment || !adjustmentReason) {
+      return toast.error("Please provide points amount and reason");
+    }
     const delta = parseInt(pointAdjustment, 10);
     if (isNaN(delta)) return toast.error("Enter a valid number");
+    
+    setIsPointsLoading(true);
     try {
-      await adjustUserPoints(selectedUser.uid, delta);
-      toast.success(`${delta > 0 ? "+" : ""}${delta} points applied to ${selectedUser.displayName}`);
+      await adjustUserPoints(selectedUser.uid, delta, adjustmentReason);
+      toast.success(`${delta > 0 ? "+" : ""}${delta} points applied.`);
+      
+      // Refresh user and history
       const data = await getAllUsers();
       setUsers(data);
-      setSelectedUser(null);
+      fetchTransactions(selectedUser.uid);
+      
       setPointAdjustment("");
+      setAdjustmentReason("");
     } catch (error) {
       toast.error("Failed to update points");
+    } finally {
+      setIsPointsLoading(false);
     }
   };
 
@@ -181,73 +208,123 @@ export default function AdminUsersPage() {
                   <TableCell className="text-xs font-black text-zinc-900">
                     ${(user.storeCredit || 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="font-mono text-[11px] text-zinc-500 font-bold tracking-widest">
+                  <TableCell className="font-mono text-[11px] text-zinc-500 font-bold tracking-widest text-left">
                     {user.referralCode || "—"}
                   </TableCell>
                   <TableCell className="text-right px-8">
-                    <Dialog>
-                      <DialogTrigger 
-                        render={
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-zinc-100 text-zinc-400" onClick={() => setSelectedUser(user)}>
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        }
-                      />
+                    <Dialog onOpenChange={(open) => {
+                      if(open) {
+                        setSelectedUser(user);
+                        fetchTransactions(user.uid);
+                        setActiveTab('details');
+                      }
+                    }}>
+                      <DialogTrigger render={
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-zinc-100 text-zinc-400">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      } />
                       {selectedUser?.uid === user.uid && (
-                        <DialogContent className="sm:max-w-[500px] rounded-[3rem] p-10 border-none shadow-2xl">
+                        <DialogContent className="sm:max-w-[550px] rounded-[3rem] p-10 border-none shadow-2xl">
                           <DialogHeader>
                             <div className="flex items-center gap-4 mb-4">
                               <div className="w-16 h-16 rounded-[2rem] bg-brand-rose/20 flex items-center justify-center text-xl font-heading text-brand-black border border-brand-rose/30">
                                 {initials(selectedUser.displayName)}
                               </div>
-                              <div>
+                              <div className="text-left">
                                 <DialogTitle className="text-2xl font-heading">{selectedUser.displayName}</DialogTitle>
                                 <DialogDescription className="text-xs font-bold tracking-widest uppercase text-zinc-400">{selectedUser.email}</DialogDescription>
                               </div>
                             </div>
                           </DialogHeader>
                           
-                          <div className="space-y-8 py-6">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="p-4 bg-zinc-50 rounded-3xl border border-zinc-100">
-                                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-1 flex items-center gap-2"><Award className="w-3 h-3" /> Role</p>
-                                <p className="text-sm font-bold text-zinc-900 capitalize">{selectedUser.role}</p>
-                              </div>
-                              <div className="p-4 bg-zinc-50 rounded-3xl border border-zinc-100">
-                                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-1 flex items-center gap-2"><History className="w-3 h-3" /> Joined</p>
-                                <p className="text-sm font-bold text-zinc-900">
-                                  {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—"}
-                                </p>
-                              </div>
-                            </div>
+                          <div className="flex gap-4 border-b border-zinc-100 mb-6">
+                            <button 
+                              onClick={() => setActiveTab('details')}
+                              className={`pb-4 text-[10px] font-bold uppercase tracking-widest transition-all px-2 ${activeTab === 'details' ? 'border-b-2 border-brand-gold text-brand-black' : 'text-zinc-400'}`}
+                            >
+                              Artist Profile
+                            </button>
+                            <button 
+                              onClick={() => setActiveTab('history')}
+                              className={`pb-4 text-[10px] font-bold uppercase tracking-widest transition-all px-2 ${activeTab === 'history' ? 'border-b-2 border-brand-gold text-brand-black' : 'text-zinc-400'}`}
+                            >
+                              Points Audit
+                            </button>
+                          </div>
 
-                            <div className="space-y-4">
-                              <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2 ml-1">
-                                <Coins className="w-3 h-3 text-brand-gold" /> Manual Points Adjustment
-                              </Label>
+                          {activeTab === 'details' ? (
+                            <div className="space-y-8 animate-in slide-in-from-left-2 duration-300">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 bg-zinc-50 rounded-3xl border border-zinc-100 text-left">
+                                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-1 flex items-center gap-2"><Award className="w-3 h-3" /> Role</p>
+                                  <p className="text-sm font-bold text-zinc-900 capitalize">{selectedUser.role}</p>
+                                </div>
+                                <div className="p-4 bg-zinc-50 rounded-3xl border border-zinc-100 text-left">
+                                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-1 flex items-center gap-2"><History className="w-3 h-3" /> Joined</p>
+                                  <p className="text-sm font-bold text-zinc-900">
+                                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="space-y-4">
+                                <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2 ml-1">
+                                  <Coins className="w-3 h-3 text-brand-gold" /> Force Points Adjustment
+                                </Label>
+                                <div className="space-y-3">
+                                  <Input 
+                                    type="number" 
+                                    placeholder="+/- points (e.g. 100 or -50)" 
+                                    className="rounded-2xl h-12 bg-zinc-50 border-zinc-100" 
+                                    value={pointAdjustment}
+                                    onChange={(e) => setPointAdjustment(e.target.value)}
+                                  />
+                                  <Input 
+                                    placeholder="Adjustment motive (e.g. Compensation for delay)" 
+                                    className="rounded-2xl h-12 bg-zinc-50 border-zinc-100" 
+                                    value={adjustmentReason}
+                                    onChange={(e) => setAdjustmentReason(e.target.value)}
+                                  />
+                                  <Button 
+                                    className="w-full h-12 rounded-2xl bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-widest disabled:opacity-50" 
+                                    onClick={handleAdjustPoints}
+                                    disabled={isPointsLoading}
+                                  >
+                                    {isPointsLoading ? "Committing..." : "Update Artist Balance"}
+                                  </Button>
+                                </div>
+                              </div>
                               <div className="flex gap-2">
-                                <Input 
-                                  type="number" 
-                                  placeholder="+/- points (e.g. 100 or -50)" 
-                                  className="rounded-2xl h-12 bg-zinc-50 border-zinc-100" 
-                                  value={pointAdjustment}
-                                  onChange={(e) => setPointAdjustment(e.target.value)}
-                                />
-                                <Button className="h-12 px-6 rounded-2xl bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-widest" onClick={handleAdjustPoints}>
-                                  Update
+                                <Button variant="outline" className="flex-1 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest border-zinc-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all gap-2">
+                                  <Ban className="w-3 h-3" /> Suspend
+                                </Button>
+                                <Button variant="outline" className="flex-1 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest border-zinc-100 gap-2">
+                                  <Mail className="w-3 h-3" /> Connect
                                 </Button>
                               </div>
                             </div>
-                            
-                            <div className="flex gap-2">
-                              <Button variant="outline" className="flex-1 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest border-zinc-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all gap-2">
-                                <Ban className="w-3 h-3" /> Restrict Account
-                              </Button>
-                              <Button variant="outline" className="flex-1 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest border-zinc-100 gap-2">
-                                <Mail className="w-3 h-3" /> Direct Message
-                              </Button>
+                          ) : (
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 animate-in slide-in-from-right-2 duration-300">
+                              {isPointsLoading ? (
+                                <div className="py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-gold mx-auto"></div></div>
+                              ) : transactions.length === 0 ? (
+                                <div className="py-20 text-center text-zinc-400 italic text-xs">No transaction history found for this artist.</div>
+                              ) : transactions.map((tx) => (
+                                <div key={tx.id} className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex justify-between items-start">
+                                  <div className="text-left space-y-1">
+                                    <p className="text-xs font-bold text-zinc-900">{tx.reason}</p>
+                                    <div className="flex items-center gap-2 text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
+                                      <Calendar className="w-2.5 h-2.5" /> {new Date(tx.createdAt).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                  <span className={`text-xs font-black ${tx.amount > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                    {tx.amount > 0 ? '+' : ''}{tx.amount}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          )}
                         </DialogContent>
                       )}
                     </Dialog>

@@ -46,12 +46,14 @@ export default function ProfilePage() {
       try {
         const q = query(
           collection(db, "orders"), 
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
+          where("userId", "==", user.uid)
         );
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-        setOrders(data);
+        
+        // Manual sort to bypass composite index requirement
+        const sortedData = data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setOrders(sortedData);
       } catch (err) {
         console.error("Order fetch failed:", err);
       } finally {

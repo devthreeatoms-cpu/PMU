@@ -37,22 +37,23 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithGoogle, user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
 
-  // After Google login, once AuthContext resolves the role, redirect accordingly
+  // After login, once AuthContext resolves the role, redirect accordingly
   useEffect(() => {
     if (!loading && user) {
       if (isAdmin) {
         router.replace("/admin/dashboard");
       } else if (returnUrl) {
         router.replace(returnUrl);
+      } else {
+        router.replace("/home");
       }
-      // For regular users without returnUrl, the login handler already pushes to /home
     }
-  }, [user, isAdmin, loading, returnUrl]);
+  }, [user, isAdmin, loading, returnUrl, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,22 +73,6 @@ function LoginForm() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      await loginWithGoogle();
-      // Redirect is handled in the useEffect above
-      toast.success("Logged in with Google");
-      if (!isAdmin && !returnUrl) {
-        router.push("/home");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to login with Google");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-brand-cream">
       <Navbar />
@@ -101,27 +86,6 @@ function LoginForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <div className="grid grid-cols-1 gap-4">
-              <Button 
-                variant="outline" 
-                onClick={handleGoogleLogin} 
-                disabled={isLoading}
-                className="h-12 border-zinc-300 hover:bg-zinc-100 transition-all font-semibold"
-              >
-                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
-                Continue with Google
-              </Button>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-zinc-300" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-zinc-500 font-medium">Or continue with email</span>
-              </div>
-            </div>
-
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

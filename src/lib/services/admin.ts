@@ -16,7 +16,33 @@ import {
   writeBatch,
   getDoc
 } from "firebase/firestore";
-import { Product, Order, Coupon, UserProfile, Referral, ShopAllSettings } from "@/lib/types";
+import { Product, Order, Coupon, UserProfile, Referral, ShopAllSettings, ReferralSettings, PointTransaction } from "@/lib/types";
+
+// --- REFERRAL SYSTEM SETTINGS ---
+
+export const DEFAULT_REFERRAL_SETTINGS: ReferralSettings = {
+  referrerRewardPoints: 500,
+  refereeDiscountPercentage: 10,
+  referralRequirement: 'first_purchase',
+  maxEarningsPerUser: 10000,
+  isActive: true
+};
+
+export const getReferralSettings = async (): Promise<ReferralSettings> => {
+  try {
+    const settingsRef = doc(db, "siteSettings", "referral");
+    const settingsDoc = await getDoc(settingsRef);
+    if (settingsDoc.exists()) return settingsDoc.data() as ReferralSettings;
+  } catch (error) {
+    console.warn("Using default referral settings.");
+  }
+  return DEFAULT_REFERRAL_SETTINGS;
+};
+
+export const updateReferralSettings = async (settings: ReferralSettings) => {
+  const settingsRef = doc(db, "siteSettings", "referral");
+  await setDoc(settingsRef, settings, { merge: true });
+};
 
 // --- SHOP ALL DESIGN SETTINGS ---
 
@@ -59,11 +85,23 @@ export const updateShopAllSettings = async (settings: ShopAllSettings) => {
   await setDoc(settingsRef, settings, { merge: true });
 };
 
+// --- USER & POINTS SERVICE ---
+
 // --- INVENTORY SERVICE ---
 
 export const getProducts = async (): Promise<Product[]> => {
   const querySnapshot = await getDocs(collection(db, "products"));
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+};
+
+export const getProductById = async (productId: string): Promise<Product | null> => {
+  const productRef = doc(db, "products", productId);
+  const settingsDoc = await getDoc(productRef);
+  
+  if (settingsDoc.exists()) {
+    return { id: settingsDoc.id, ...settingsDoc.data() } as Product;
+  }
+  return null;
 };
 
 export const updateProductStock = async (productId: string, newStock: number) => {
@@ -76,11 +114,16 @@ export const updateProductStock = async (productId: string, newStock: number) =>
 export const getOrders = async (status?: string): Promise<Order[]> => {
   const ordersRef = collection(db, "orders");
   const q = status 
-    ? query(ordersRef, where("status", "==", status), orderBy("createdAt", "desc"))
+    ? query(ordersRef, where("status", "==", status))
     : query(ordersRef, orderBy("createdAt", "desc"));
     
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+  const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+  
+  // Apply manual sort if status filter was used to bypass composite index requirement
+  return status 
+    ? data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    : data;
 };
 
 export const updateOrderStatus = async (orderId: string, status: Order['status']) => {
@@ -103,17 +146,62 @@ export const createCoupon = async (couponData: Partial<Coupon>) => {
   });
 };
 
-// --- USER SERVICE ---
-
 export const getAllUsers = async (): Promise<UserProfile[]> => {
   const querySnapshot = await getDocs(collection(db, "users"));
   return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
 };
 
-export const adjustUserPoints = async (userId: string, pointsDelta: number) => {
+export const adjustUserPoints = async (userId: string, pointsDelta: number, reason: string, adminId?: string) => {
+  const batch = writeBatch(db);
   const userRef = doc(db, "users", userId);
-  await updateDoc(userRef, { 
+  const transactionRef = doc(collection(userRef, "transactions"));
+
+  batch.update(userRef, { 
     points: increment(pointsDelta)
+  });
+
+  const transaction: PointTransaction = {
+    id: transactionRef.id,
+    amount: pointsDelta,
+    type: pointsDelta > 0 ? 'earn' : 'redeem',
+    reason,
+    adminId,
+    createdAt: Date.now()
+  };
+
+  batch.set(transactionRef, transaction);
+  await batch.commit();
+};
+
+export const getUserTransactions = async (userId: string): Promise<PointTransaction[]> => {
+  const transactionsRef = collection(db, "users", userId, "transactions");
+  const q = query(transactionsRef, orderBy("createdAt", "desc"), limit(50));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ ...doc.data() } as PointTransaction));
+};
+
+// --- REFERRAL AUDIT SERVICE ---
+
+export const getReferralAuditData = async () => {
+  const users = await getAllUsers();
+  const referrers = users.filter(u => (u.totalReferralEarnings || 0) > 0 || users.some(r => r.referredBy === u.uid));
+  
+  return referrers.map(referrer => {
+    const directReferrals = users.filter(u => u.referredBy === referrer.uid);
+    return {
+      uid: referrer.uid,
+      displayName: referrer.displayName,
+      referralCode: referrer.referralCode,
+      referralCount: directReferrals.length,
+      conversionCount: directReferrals.filter(u => (u.points || 0) > 0).length, // Simplified: assume if user has points, they've been active
+      earnings: referrer.totalReferralEarnings || 0,
+      status: (referrer as any).status || 'active',
+      referrals: directReferrals.map(r => ({
+        uid: r.uid,
+        displayName: r.displayName,
+        createdAt: r.createdAt
+      }))
+    };
   });
 };
 
