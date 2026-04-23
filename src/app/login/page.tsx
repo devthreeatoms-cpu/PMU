@@ -62,9 +62,15 @@ function LoginForm() {
       const { user: loggedInUser } = await signInWithEmailAndPassword(auth, email, password);
       const redirectPath = await getRedirectForUser(loggedInUser.uid);
       
+      if (redirectPath === "/admin/dashboard") {
+        await auth.signOut();
+        toast.error("Administrators must login via the Secure Gateway.");
+        return;
+      }
+      
       const finalRedirect = (redirectPath === "/home" && returnUrl) ? returnUrl : redirectPath;
       
-      toast.success(redirectPath === "/admin/dashboard" ? "Admin Console unlocked." : "Logged in successfully.");
+      toast.success("Logged in successfully.");
       router.push(finalRedirect);
     } catch (error: any) {
       toast.error(error.message || "Failed to login");
