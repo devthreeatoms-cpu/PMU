@@ -88,6 +88,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     doc.save(`Invoice_${order.id}.pdf`);
   };
 
+  const printInvoice = () => {
+    window.print();
+  };
+
   if (isLoading) return (
     <div className="py-40 text-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold mx-auto" />
@@ -103,8 +107,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 print:p-0 print:m-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 print:hidden">
         <div className="flex flex-col gap-4">
           <Link href="/admin/orders" className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-brand-gold transition-colors tracking-widest uppercase">
             <ArrowLeft className="w-3 h-3" /> Back to Orders
@@ -125,7 +129,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <Button variant="outline" onClick={generateInvoice} className="rounded-full text-[10px] font-bold tracking-widest uppercase gap-2">
             <Download className="w-3 h-3" /> Generate PDF
           </Button>
-          <Button variant="outline" className="rounded-full text-[10px] font-bold tracking-widest uppercase gap-2">
+          <Button variant="outline" onClick={printInvoice} className="rounded-full text-[10px] font-bold tracking-widest uppercase gap-2">
             <Printer className="w-3 h-3" /> Print Invoice
           </Button>
           <Button 
@@ -137,6 +141,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </Button>
         </div>
       </div>
+
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
