@@ -205,7 +205,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-6 pt-8">
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Regular Asset Value ($)</Label>
+                <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Regular Asset Value (₹)</Label>
                 <Input 
                   id="price" type="number" step="0.01" value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
@@ -213,7 +213,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="salePrice" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Promotional Value ($)</Label>
+                <Label htmlFor="salePrice" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Promotional Value (₹)</Label>
                 <Input 
                   id="salePrice" type="number" step="0.01" value={formData.salePrice}
                   onChange={(e) => setFormData({...formData, salePrice: e.target.value})}

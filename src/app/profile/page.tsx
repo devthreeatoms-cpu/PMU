@@ -21,6 +21,18 @@ import {
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { setDoc, updateDoc } from "firebase/firestore";
+import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any }> = {
   "pending":    { color: "bg-zinc-100 text-zinc-600 border-zinc-200",    icon: <Clock className="w-3 h-3" /> },
@@ -40,6 +52,17 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editAddress, setEditAddress] = useState({
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    country: "India",
+    phone: ""
+  });
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -69,8 +92,12 @@ export default function ProfilePage() {
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
         
+        // Only show successful orders
+        const successfulStatuses = ['paid', 'processing', 'shipped', 'delivered'];
+        const filteredData = data.filter(order => successfulStatuses.includes(order.status));
+        
         // Manual sort to bypass composite index requirement
-        const sortedData = data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const sortedData = filteredData.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         setOrders(sortedData);
       } catch (err) {
         console.error("Order fetch failed:", err);
@@ -80,6 +107,52 @@ export default function ProfilePage() {
     };
     fetchOrders();
   }, [user]);
+
+  useEffect(() => {
+    if (!isEditDialogOpen) {
+      if (profile?.defaultShippingAddress) {
+        const addr = profile.defaultShippingAddress;
+        setEditAddress({
+          firstName: addr.firstName || "",
+          lastName: addr.lastName || "",
+          address: addr.address || "",
+          city: addr.city || "",
+          zipCode: addr.zipCode || "",
+          country: addr.country || "India",
+          phone: addr.phone || ""
+        });
+      } else if (orders.length > 0) {
+        const lastAddr = orders[0].shippingAddress;
+        setEditAddress({
+          firstName: lastAddr.firstName || "",
+          lastName: lastAddr.lastName || "",
+          address: lastAddr.address || "",
+          city: lastAddr.city || "",
+          zipCode: lastAddr.zipCode || "",
+          country: lastAddr.country || "India",
+          phone: lastAddr.phone || ""
+        });
+      }
+    }
+  }, [orders, profile, isEditDialogOpen]);
+
+  const handleSaveAddress = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        defaultShippingAddress: editAddress
+      });
+      toast.success("Shipping logistics updated successfully.");
+      setIsEditDialogOpen(false);
+    } catch (err: any) {
+      console.error("Save address failed:", err);
+      toast.error("Failed to update logistics.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -122,11 +195,127 @@ export default function ProfilePage() {
               </div>
               <div className="pt-6 border-t border-zinc-50 flex justify-center">
                  <div className="text-center">
-                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Global Order History</p>
+                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Successful Order History</p>
                    <p className="text-lg font-black text-zinc-900">{orders.length} Records</p>
                  </div>
               </div>
             </div>
+            
+            {/* Shipping Info Card */}
+            {(orders.length > 0 || profile?.defaultShippingAddress) && (
+              <div className="bg-white p-8 rounded-[2rem] border border-zinc-100 shadow-sm space-y-6 animate-in fade-in slide-in-from-left duration-700 delay-200">
+                <div className="flex items-center gap-3 border-b border-zinc-50 pb-4">
+                  <div className="w-8 h-8 rounded-full bg-brand-rose/10 flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-brand-gold" />
+                  </div>
+                  <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Artistry Logistics</h3>
+                </div>
+                {(() => {
+                  const displayAddr = profile?.defaultShippingAddress || orders[0]?.shippingAddress;
+                  if (!displayAddr) return null;
+                  return (
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-brand-gold uppercase tracking-tighter">Primary Recipient</p>
+                        <p className="text-sm font-bold text-zinc-900">{displayAddr.firstName} {displayAddr.lastName}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-brand-gold uppercase tracking-tighter">Destination</p>
+                        <p className="text-xs text-zinc-500 font-light leading-relaxed italic">
+                          {displayAddr.address}<br />
+                          {displayAddr.city}, {displayAddr.zipCode}<br />
+                          {displayAddr.country}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-brand-gold uppercase tracking-tighter">Contact Number</p>
+                        <p className="text-xs font-bold text-zinc-900">{displayAddr.phone || "Not Provided"}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="pt-4 border-t border-zinc-50">
+                   <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogTrigger 
+                      render={
+                        <button className="w-full py-3 border border-brand-gold text-brand-gold bg-transparent rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-gold hover:text-white transition-all">
+                          Edit Logistics
+                        </button>
+                      }
+                    />
+                     <DialogContent className="sm:max-w-md bg-white rounded-3xl border-brand-gold/10">
+                       <DialogHeader>
+                         <DialogTitle className="text-xl font-heading italic">Refine Logistics</DialogTitle>
+                       </DialogHeader>
+                       <div className="grid gap-4 py-4">
+                         <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">First Name</Label>
+                             <Input 
+                               value={editAddress.firstName} 
+                               onChange={(e) => setEditAddress({...editAddress, firstName: e.target.value})} 
+                               className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                             />
+                           </div>
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Last Name</Label>
+                             <Input 
+                               value={editAddress.lastName} 
+                               onChange={(e) => setEditAddress({...editAddress, lastName: e.target.value})} 
+                               className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                             />
+                           </div>
+                         </div>
+                         <div className="space-y-2">
+                           <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Address</Label>
+                           <Input 
+                             value={editAddress.address} 
+                             onChange={(e) => setEditAddress({...editAddress, address: e.target.value})} 
+                             className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                           />
+                         </div>
+                         <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">City</Label>
+                             <Input 
+                               value={editAddress.city} 
+                               onChange={(e) => setEditAddress({...editAddress, city: e.target.value})} 
+                               className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                             />
+                           </div>
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Zip Code</Label>
+                             <Input 
+                               value={editAddress.zipCode} 
+                               onChange={(e) => setEditAddress({...editAddress, zipCode: e.target.value})} 
+                               className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                             />
+                           </div>
+                         </div>
+                         <div className="space-y-2">
+                           <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Contact (Mobile)</Label>
+                           <Input 
+                             value={editAddress.phone} 
+                             onChange={(e) => setEditAddress({...editAddress, phone: e.target.value})} 
+                             className="h-10 rounded-xl border-zinc-100 bg-zinc-50/50" 
+                             placeholder="+91 ..."
+                           />
+                         </div>
+                       </div>
+                       <DialogFooter>
+                         <Button 
+                           onClick={handleSaveAddress} 
+                           disabled={isSaving}
+                           className="w-full bg-brand-black text-white hover:bg-brand-gold h-12 rounded-xl text-[10px] font-bold tracking-[0.2em] uppercase transition-all"
+                         >
+                           {isSaving ? "Saving..." : "Commit Logistics"}
+                         </Button>
+                       </DialogFooter>
+                     </DialogContent>
+                   </Dialog>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Main History Content */}
@@ -134,7 +323,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <h1 className="text-4xl font-heading italic">Professional History</h1>
               <div className="flex gap-2">
-                <Badge className="bg-white border-zinc-100 text-zinc-400 font-bold text-[9px] uppercase tracking-widest px-4 py-1.5 rounded-full">All Orders</Badge>
+                <Badge className="bg-white border-zinc-100 text-zinc-400 font-bold text-[9px] uppercase tracking-widest px-4 py-1.5 rounded-full">Successful Orders Only</Badge>
               </div>
             </div>
 
@@ -206,7 +395,7 @@ export default function ProfilePage() {
                           <div className="flex items-baseline gap-4 mt-8 pt-6 border-t border-zinc-100 justify-between">
                              <div className="flex items-baseline gap-2">
                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Investment Total</p>
-                               <p className="text-xl font-heading text-zinc-900">${order.total?.toFixed(2)}</p>
+                               <p className="text-xl font-heading text-zinc-900">₹{order.total?.toFixed(2)}</p>
                              </div>
                              <Link href={`/profile/orders/${order.id}`}>
                                <button className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-zinc-400 hover:text-brand-gold transition-colors uppercase">

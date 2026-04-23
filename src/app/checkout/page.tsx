@@ -38,7 +38,7 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     zipCode: "",
-    country: "USA",
+    country: "India",
     phone: ""
   });
 
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
     return appliedCoupon.value;
   }, [appliedCoupon, subtotal]);
 
-  const shippingAmount = (subtotal - discountAmount) > 150 ? 0 : 15;
+  const shippingAmount = (subtotal - discountAmount) > 12000 ? 0 : 150;
   const taxAmount = (subtotal - discountAmount) * 0.08;
   const total = Math.max(0, subtotal - discountAmount + shippingAmount + taxAmount);
 

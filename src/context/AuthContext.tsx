@@ -10,7 +10,8 @@ import {
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { UserProfile } from "@/lib/types";
+import { UserProfile, CartItem } from "@/lib/types";
+import { useCartStore } from "@/store/useCartStore";
 
 interface AuthContextType {
   user: User | null;
@@ -30,76 +31,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       
+      const BOOTSTRAP_ADMIN_UID = "JFfgcLKDtTPDsHUxrmi5L7sLIom2";
+
       if (user) {
         try {
-          const { doc, getDoc, setDoc, serverTimestamp } = await import("firebase/firestore");
+          const { doc, onSnapshot, setDoc } = await import("firebase/firestore");
           const userRef = doc(db, "users", user.uid);
           
-          // BOOTSTRAP BYPASS: Enable admin status immediately for the provided UID
-          const BOOTSTRAP_ADMIN_UID = "JFfgcLKDtTPDsHUxrmi5L7sLIom2";
           if (user.uid === BOOTSTRAP_ADMIN_UID) {
             setIsAdmin(true);
-            // We still try to fetch/create profile, but admin is guaranteed
           }
-          
-          const userDoc = await getDoc(userRef);
-          
-          if (userDoc.exists()) {
-            const data = userDoc.data() as UserProfile;
-            setProfile(data);
-            // Bootstrap UID always stays admin regardless of DB value
-            const isAdminFromDB = data.role === "admin";
-            setIsAdmin(isAdminFromDB || user.uid === BOOTSTRAP_ADMIN_UID);
-          } else {
-            // Create a default profile for new users (e.g. Google Sign-in)
-            const newProfile: UserProfile = {
-              uid: user.uid,
-              email: user.email || "",
-              displayName: user.displayName || "Artist",
-              role: "customer",
-              points: 0,
-              storeCredit: 0,
-              createdAt: Date.now()
-            };
-            
-            try {
-              await setDoc(userRef, newProfile);
-              setProfile(newProfile);
-              setIsAdmin(false);
-            } catch (createError: any) {
-              if (!createError.message?.includes("permissions")) {
-                console.warn("Profile creation pending: User document not yet initialized.");
+
+          // Start real-time listener for profile
+          unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.data() as UserProfile;
+              setProfile(data);
+              
+              // Sync Cart Store
+              const cartStore = useCartStore.getState();
+              cartStore.setUserId(user.uid);
+              if (data.cart) {
+                cartStore.setItems(data.cart);
               }
-              setProfile(null);
-              // Keep isAdmin if bootstrap bypass was set
-              if (user.uid !== BOOTSTRAP_ADMIN_UID) setIsAdmin(false);
+              
+              const isAdminFromDB = data.role === "admin";
+              setIsAdmin(isAdminFromDB || user.uid === BOOTSTRAP_ADMIN_UID);
+            } else {
+              // Create default profile
+              const newProfile: UserProfile = {
+                uid: user.uid,
+                email: user.email || "",
+                displayName: user.displayName || "Artist",
+                role: "customer",
+                points: 0,
+                storeCredit: 0,
+                createdAt: Date.now()
+              };
+              
+              try {
+                await setDoc(userRef, newProfile);
+                // The listener will pick this up and setProfile
+              } catch (createError: any) {
+                console.warn("Profile creation pending...");
+                setProfile(null);
+                if (user.uid !== BOOTSTRAP_ADMIN_UID) setIsAdmin(false);
+              }
             }
-          }
+          }, (error) => {
+            console.error("Profile Listener Error:", error);
+            setProfile(null);
+            if (user.uid !== BOOTSTRAP_ADMIN_UID) setIsAdmin(false);
+          });
+
         } catch (error: any) {
-          if (error.message?.includes("permissions")) {
-             // Non-obtrusive warning for developers/admins regarding rules
-             console.warn("🔐 PMU SUPPLY SYSTEM: Firestore access is currently restricted by Security Rules. Please update your rules in the Firebase Console to enable profile synchronization.");
-          } else {
-             console.error("Firestore Profile Fetch Error:", error.message);
-          }
+          console.error("Auth Setup Error:", error);
           setProfile(null);
-          // Don't reset isAdmin here if it was already set by the bypass above
-          if (user.uid !== "JFfgcLKDtTPDsHUxrmi5L7sLIom2") {
-            setIsAdmin(false);
-          }
+          if (user.uid !== BOOTSTRAP_ADMIN_UID) setIsAdmin(false);
         }
       } else {
+        if (unsubscribeProfile) unsubscribeProfile();
         setProfile(null);
         setIsAdmin(false);
+        
+        // Clear Cart Store on Logout
+        const cartStore = useCartStore.getState();
+        cartStore.setUserId(null);
+        cartStore.setItems([]);
       }
       
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const loginWithGoogle = async () => {

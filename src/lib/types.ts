@@ -38,6 +38,13 @@ export interface Product {
   updatedAt: number;
 }
 
+export interface CartItem {
+  product: Product;
+  variantId?: string;
+  variantName?: string;
+  quantity: number;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -49,6 +56,16 @@ export interface UserProfile {
   referralCount?: number;
   referredBy?: string; // UID of the person who referred them
   totalReferralEarnings?: number;
+  defaultShippingAddress?: {
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    zipCode: string;
+    country: string;
+    phone: string;
+  };
+  cart?: CartItem[];
   createdAt: number;
 }
 

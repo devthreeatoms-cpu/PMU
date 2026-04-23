@@ -169,7 +169,7 @@ export default function AddProductPage() {
             </CardHeader>
             <CardContent className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Regular Price ($)</Label>
+                <Label htmlFor="price">Regular Price (₹)</Label>
                 <Input 
                   id="price" 
                   type="number" 
@@ -181,7 +181,7 @@ export default function AddProductPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="salePrice">Sale Price ($)</Label>
+                <Label htmlFor="salePrice">Sale Price (₹)</Label>
                 <Input 
                   id="salePrice" 
                   type="number" 

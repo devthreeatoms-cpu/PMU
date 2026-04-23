@@ -23,6 +23,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import jsPDF from "jspdf";
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any; label: string }> = {
   "pending":    { color: "bg-zinc-100 text-zinc-600 border-zinc-200",    icon: <Clock className="w-4 h-4" />, label: "Pending Verification" },
@@ -76,6 +77,106 @@ export default function OrderDetailsPage() {
     fetchData();
   }, [user, id, router]);
 
+  const generateInvoice = () => {
+    if (!order) return;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("PMU SUPPLY", 20, 25);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Premium PMU Tools & Equipment", 20, 32);
+    
+    // Invoice Info
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE", 140, 25);
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Reference: ${order.id}`, 140, 32);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 140, 37);
+    
+    doc.line(20, 45, 190, 45);
+    
+    // Billing Info
+    doc.setFont("helvetica", "bold");
+    doc.text("Billed To:", 20, 55);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`, 20, 62);
+    doc.text(order.shippingAddress.address, 20, 67);
+    doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`, 20, 72);
+    doc.text(order.shippingAddress.country, 20, 77);
+    
+    // Items Header
+    let y = 95;
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, y - 7, 170, 10, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Item Description", 25, y);
+    doc.text("Qty", 120, y);
+    doc.text("Price", 145, y);
+    doc.text("Total", 170, y);
+    
+    y += 15;
+    doc.setFont("helvetica", "normal");
+    
+    order.items.forEach(item => {
+      // Check if we need a new page
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.text(item.productName, 25, y, { maxWidth: 90 });
+      doc.text(item.quantity.toString(), 122, y);
+      doc.text(`₹${item.priceAtPurchase.toFixed(2)}`, 145, y);
+      doc.text(`₹${(item.priceAtPurchase * item.quantity).toFixed(2)}`, 170, y);
+      y += 10;
+    });
+    
+    doc.line(20, y, 190, y);
+    y += 10;
+    
+    // Totals
+    const rightAlign = 190;
+    doc.text("Subtotal:", 140, y);
+    doc.text(`₹${order.subtotal?.toFixed(2)}`, rightAlign, y, { align: "right" });
+    y += 7;
+    
+    doc.text("Shipping:", 140, y);
+    doc.text(`₹${order.shippingAmount?.toFixed(2)}`, rightAlign, y, { align: "right" });
+    y += 7;
+    
+    doc.text("Tax (GST):", 140, y);
+    doc.text(`₹${order.taxAmount?.toFixed(2)}`, rightAlign, y, { align: "right" });
+    y += 7;
+    
+    if (order.discountAmount > 0) {
+      doc.setTextColor(34, 197, 94); // Green
+      doc.text("Discounts:", 140, y);
+      doc.text(`-₹${order.discountAmount?.toFixed(2)}`, rightAlign, y, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      y += 7;
+    }
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Amount:", 140, y + 5);
+    doc.text(`₹${order.total?.toFixed(2)}`, rightAlign, y + 5, { align: "right" });
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(150, 150, 150);
+    doc.text("Thank you for choosing PMU SUPPLY. Your artistry is our priority.", 105, 285, { align: "center" });
+    
+    doc.save(`Invoice_${order.id}.pdf`);
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-white">
@@ -124,7 +225,11 @@ export default function OrderDetailsPage() {
               REFERENCE: <span className="text-zinc-900">{order.id}</span> • {new Date(order.createdAt).toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
-          <Button variant="outline" className="rounded-full px-8 text-[10px] font-black uppercase tracking-widest gap-2">
+          <Button 
+            variant="outline" 
+            onClick={generateInvoice}
+            className="rounded-full px-8 text-[10px] font-black uppercase tracking-widest gap-2"
+          >
             <Receipt className="w-3 h-3" /> Download Invoice
           </Button>
         </div>
@@ -158,8 +263,8 @@ export default function OrderDetailsPage() {
                           <p className="text-xs text-zinc-400 font-light italic">Quantity: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-black text-zinc-900">${(item.priceAtPurchase * item.quantity).toFixed(2)}</p>
-                          <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">${item.priceAtPurchase} per unit</p>
+                          <p className="text-sm font-black text-zinc-900">₹{(item.priceAtPurchase * item.quantity).toFixed(2)}</p>
+                          <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">₹{item.priceAtPurchase} per unit</p>
                         </div>
                       </div>
                     );
@@ -223,27 +328,27 @@ export default function OrderDetailsPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-400 font-light">Subtotal</span>
-                    <span className="font-bold font-mono">${order.subtotal?.toFixed(2)}</span>
+                    <span className="font-bold font-mono">₹{order.subtotal?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-400 font-light">Professional Shipping</span>
-                    <span className="font-bold font-mono">${order.shippingAmount?.toFixed(2)}</span>
+                    <span className="font-bold font-mono">₹{order.shippingAmount?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-zinc-400 font-light">Tax (GST)</span>
-                    <span className="font-bold font-mono">${order.taxAmount?.toFixed(2)}</span>
+                    <span className="font-bold font-mono">₹{order.taxAmount?.toFixed(2)}</span>
                   </div>
                   {(order.discountAmount > 0 || (order.couponDiscountAmount || 0) > 0) && (
                     <div className="flex justify-between text-xs text-emerald-400">
                       <span className="font-light">Applied Incentives</span>
-                      <span className="font-bold font-mono">-${(order.discountAmount + (order.couponDiscountAmount || 0)).toFixed(2)}</span>
+                      <span className="font-bold font-mono">-₹{(order.discountAmount + (order.couponDiscountAmount || 0)).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
                 
                 <div className="pt-6 border-t border-white/10 flex justify-between items-baseline">
                   <span className="text-sm font-bold tracking-widest uppercase">Total Investment</span>
-                  <span className="text-3xl font-heading text-brand-gold">${order.total?.toFixed(2)}</span>
+                  <span className="text-3xl font-heading text-brand-gold">₹{order.total?.toFixed(2)}</span>
                 </div>
 
                 <div className="pt-8">
