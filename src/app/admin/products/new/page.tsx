@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, ImagePlus, Loader2, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, X, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -18,10 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ProductCategory } from "@/lib/types";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { createProductAction } from "../actions";
+import VariantManager from "../VariantManager";
+import { ProductOption, ProductVariant } from "@/lib/types";
 
 import { getCategoriesAction } from "../category-actions";
 
@@ -39,7 +42,12 @@ export default function AddProductPage() {
     sku: "",
     category: "",
     stock: "0",
+    isActive: true,
   });
+  
+  const [hasVariants, setHasVariants] = useState(false);
+  const [options, setOptions] = useState<ProductOption[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,6 +110,10 @@ export default function AddProductPage() {
         category: formData.category,
         stock: formData.stock,
         imageUrls,
+        isActive: formData.isActive,
+        hasVariants,
+        options: hasVariants ? options : [],
+        variants: hasVariants ? variants : [],
       });
 
       if (!result.success) {
@@ -163,55 +175,93 @@ export default function AddProductPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing & Inventory</CardTitle>
-            </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">Regular Price (₹)</Label>
-                <Input 
-                  id="price" 
-                  type="number" 
-                  step="0.01" 
-                  value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  required 
-                  placeholder="0.00" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="salePrice">Sale Price (₹)</Label>
-                <Input 
-                  id="salePrice" 
-                  type="number" 
-                  step="0.01" 
-                  value={formData.salePrice}
-                  onChange={(e) => setFormData({...formData, salePrice: e.target.value})}
-                  placeholder="0.00" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU (Optional)</Label>
-                <Input 
-                  id="sku" 
-                  value={formData.sku}
-                  onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                  placeholder="MK-10293" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock">Stock Quantity</Label>
-                <Input 
-                  id="stock" 
-                  type="number" 
-                  value={formData.stock}
-                  onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                  required 
-                />
-              </div>
-            </CardContent>
-          </Card>
+           <Card>
+             <CardHeader>
+               <div className="flex items-center justify-between">
+                 <CardTitle>Pricing & Inventory</CardTitle>
+                 <div className="flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-full border border-zinc-100">
+                   <Label htmlFor="variant-toggle" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Has Variants</Label>
+                   <Switch 
+                     id="variant-toggle"
+                     checked={hasVariants}
+                     onCheckedChange={setHasVariants}
+                   />
+                 </div>
+               </div>
+             </CardHeader>
+             <CardContent>
+               {!hasVariants ? (
+                 <div className="grid sm:grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="price">Regular Price (₹)</Label>
+                     <Input 
+                       id="price" 
+                       type="number" 
+                       step="0.01" 
+                       value={formData.price}
+                       onChange={(e) => setFormData({...formData, price: e.target.value})}
+                       required 
+                       placeholder="0.00" 
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="salePrice">Sale Price (₹)</Label>
+                     <Input 
+                       id="salePrice" 
+                       type="number" 
+                       step="0.01" 
+                       value={formData.salePrice}
+                       onChange={(e) => setFormData({...formData, salePrice: e.target.value})}
+                       placeholder="0.00" 
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="sku">SKU (Optional)</Label>
+                     <Input 
+                       id="sku" 
+                       value={formData.sku}
+                       onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                       placeholder="MK-10293" 
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="stock">Stock Quantity</Label>
+                     <Input 
+                       id="stock" 
+                       type="number" 
+                       value={formData.stock}
+                       onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                       required 
+                     />
+                   </div>
+                 </div>
+               ) : (
+                 <div className="py-4 space-y-4">
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex gap-4 items-start">
+                      <div className="bg-white p-2 rounded-xl shadow-sm">
+                        <Info className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-blue-900 uppercase tracking-tight">Variant Mode Enabled</p>
+                        <p className="text-[10px] text-blue-700/70 mt-0.5 leading-relaxed">
+                          Pricing and inventory will be managed individually for each combination below.
+                        </p>
+                      </div>
+                    </div>
+                    <VariantManager 
+                      options={options}
+                      variants={variants}
+                      basePrice={parseFloat(formData.price) || 0}
+                      baseSku={formData.sku}
+                      onChange={(opts, vars) => {
+                        setOptions(opts);
+                        setVariants(vars);
+                      }}
+                    />
+                 </div>
+               )}
+             </CardContent>
+           </Card>
         </div>
 
         {/* Right Column (Images & Category) */}
@@ -221,6 +271,17 @@ export default function AddProductPage() {
               <CardTitle>Status & Categorization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100">
+                <div className="space-y-0.5">
+                  <Label htmlFor="status" className="text-xs font-bold uppercase tracking-widest text-zinc-900">Visibility</Label>
+                  <p className="text-[10px] text-zinc-400">Set if this product is active in the shop.</p>
+                </div>
+                <Switch 
+                  id="status"
+                  checked={formData.isActive} 
+                  onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select 

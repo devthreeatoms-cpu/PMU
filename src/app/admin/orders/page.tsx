@@ -38,6 +38,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
   "pending":    { color: "bg-zinc-100 text-zinc-600 border-zinc-200",    icon: <Clock className="w-3 h-3" /> },
@@ -48,20 +55,37 @@ const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = 
   "cancelled":  { color: "bg-red-50 text-red-600 border-red-100",        icon: <XCircle className="w-3 h-3" /> },
 };
 
-const STATUS_FILTERS = ["all", "pending", "paid", "processing", "shipped", "delivered", "cancelled"];
+const VIEW_TABS = [
+  { id: "recent", label: "Recent Orders" },
+  { id: "all", label: "All Orders" },
+  { id: "pending", label: "Pending" },
+  { id: "shipped", label: "Shipped" },
+  { id: "delivered", label: "Delivered" },
+];
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("recent");
 
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const res = await getOrdersAction(filterStatus === "all" ? undefined : filterStatus);
+      // For "recent", we fetch all and filter client-side for now to include multiple statuses
+      const statusParam = (filterStatus === "all" || filterStatus === "recent") ? undefined : filterStatus;
+      const res = await getOrdersAction(statusParam);
+      
       if (res.success && res.orders) {
-        setOrders(res.orders);
+        let fetchedOrders = res.orders;
+        
+        if (filterStatus === "recent") {
+          fetchedOrders = fetchedOrders.filter(o => 
+            ["pending", "paid", "processing", "shipped"].includes(o.status)
+          );
+        }
+        
+        setOrders(fetchedOrders);
       } else {
         toast.error(res.error || "Failed to fetch orders");
       }
@@ -133,7 +157,7 @@ export default function AdminOrdersPage() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setFilterStatus("all");
+    setFilterStatus("recent");
   };
 
   return (
@@ -166,7 +190,7 @@ export default function AdminOrdersPage() {
           
           <Dialog>
             <DialogTrigger render={
-              <Button size="sm" className="bg-zinc-950 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-8 flex gap-2">
+              <Button size="sm" className="bg-brand-gold hover:bg-brand-gold/90 text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-8 flex gap-2">
                 <Plus className="w-3 h-3" /> Create Manual Order
               </Button>
             } />
@@ -187,31 +211,36 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row gap-4 p-4 bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm">
+      {/* View Navigation Tabs */}
+      <div className="flex border-b border-zinc-100 gap-8 overflow-x-auto no-scrollbar">
+        {VIEW_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilterStatus(tab.id)}
+            className={`pb-4 text-[10px] font-bold uppercase tracking-[0.2em] transition-all relative ${
+              filterStatus === tab.id 
+                ? "text-brand-gold" 
+                : "text-zinc-400 hover:text-zinc-600"
+            }`}
+          >
+            {tab.label}
+            {filterStatus === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-gold animate-in fade-in slide-in-from-bottom-1" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex flex-col md:flex-row gap-4 p-4 bg-zinc-50/50 border border-zinc-100 rounded-[2.5rem]">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <Input 
             placeholder="Search by Order ID, customer, or email..." 
-            className="pl-12 h-12 border-zinc-100 rounded-2xl focus:ring-brand-vibrant-pink/10 focus:border-brand-vibrant-pink/30 bg-zinc-50"
+            className="pl-12 h-12 border-zinc-100 rounded-2xl focus:ring-brand-gold/10 focus:border-brand-gold/30 bg-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="flex gap-2 flex-wrap items-center">
-          {STATUS_FILTERS.map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${
-                filterStatus === s 
-                  ? "bg-brand-gold text-white shadow-lg shadow-brand-gold/20" 
-                  : "bg-zinc-50 text-zinc-400 border border-zinc-100 hover:border-brand-gold/30 hover:text-brand-gold"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -273,10 +302,31 @@ export default function AdminOrdersPage() {
                       ₹{order.total?.toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Badge className={`rounded-full px-3 py-1 flex items-center gap-1.5 w-fit font-bold text-[9px] uppercase tracking-tighter border ${STATUS_CONFIG[order.status]?.color}`}>
-                        {STATUS_CONFIG[order.status]?.icon}
-                        {order.status}
-                      </Badge>
+                      <Select
+                        value={order.status}
+                        onValueChange={(val) => handleStatusUpdate(order.id!, val as Order["status"])}
+                      >
+                        <SelectTrigger className={`h-8 rounded-full px-3 text-[9px] font-bold uppercase tracking-tighter border w-[120px] ${STATUS_CONFIG[order.status]?.color}`}>
+                          <div className="flex items-center gap-1.5">
+                            {STATUS_CONFIG[order.status]?.icon}
+                            <SelectValue placeholder="Status" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-zinc-100 shadow-xl p-1">
+                          {Object.keys(STATUS_CONFIG).map((s) => (
+                            <SelectItem 
+                              key={s} 
+                              value={s}
+                              className="text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-zinc-50 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2">
+                                {STATUS_CONFIG[s].icon}
+                                {s}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right px-8">
                       <div className="flex justify-end gap-2">

@@ -9,13 +9,20 @@ export type ProductCategory =
   | "Lashes"
   | "Other";
 
+export interface ProductOption {
+  id: string;
+  name: string;      // e.g. "Size"
+  values: string[];  // e.g. ["S", "M", "L"]
+}
+
 export interface ProductVariant {
   id: string;
-  name: string;      // e.g. "Pink", "0.30mm"
-  type: string;      // e.g. "Color", "Size"
-  priceModifier: number;
+  combination: Record<string, string>; // e.g. { "Size": "M", "Color": "Black" }
+  price: number;
+  salePrice?: number;
   stock: number;
   sku: string;
+  isActive: boolean;
 }
 
 export interface Product {
@@ -24,15 +31,17 @@ export interface Product {
   slug: string;
   description: string;
   shortDescription?: string;
-  price: number;
-  salePrice?: number;
-  sku?: string;
+  price: number;       // Base price
+  salePrice?: number;  // Base sale price
+  sku?: string;        // Base SKU
   category: ProductCategory | string;
-  stock: number;     // Total stock if no variants, otherwise sum of variants
+  stock: number;       // Total stock (sum of variants if present)
   imageUrls: string[];
   tags?: string[];
   isFeatured?: boolean;
   isActive?: boolean;
+  hasVariants: boolean;
+  options?: ProductOption[];
   variants?: ProductVariant[];
   createdAt: number;
   updatedAt: number;
@@ -94,6 +103,12 @@ export interface OrderItem {
   totalPrice: number;
 }
 
+export interface OrderHistoryEvent {
+  status: Order['status'];
+  timestamp: number;
+  message?: string;
+}
+
 export interface Order {
   id?: string;
   userId: string;
@@ -112,6 +127,7 @@ export interface Order {
   pointsUsed: number;
   storeCreditUsed: number;
   status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  history?: OrderHistoryEvent[];
   shippingAddress: {
     firstName: string;
     lastName: string;

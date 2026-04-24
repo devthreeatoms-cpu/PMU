@@ -128,3 +128,60 @@ export async function sendShippingUpdateEmail(order: any) {
     return { success: false, error };
   }
 }
+export async function sendOrderStatusUpdateEmail(order: any) {
+  const { id, status, shippingAddress } = order;
+  const statusUpper = status.charAt(0).toUpperCase() + status.slice(1);
+
+  let statusMessage = "Your order status has been updated.";
+  let statusIcon = "📋";
+
+  if (status === "processing") {
+    statusMessage = "Our specialists are currently preparing your assets.";
+    statusIcon = "⚙️";
+  } else if (status === "shipped") {
+    statusMessage = "Your package has left our fulfillment center.";
+    statusIcon = "🚚";
+  } else if (status === "delivered") {
+    statusMessage = "Your package has been successfully delivered.";
+    statusIcon = "✅";
+  } else if (status === "cancelled") {
+    statusMessage = "Your order has been cancelled. Please contact support for details.";
+    statusIcon = "❌";
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [shippingAddress.email],
+      subject: `Update: PMU SUPPLY Order ${id} is now ${statusUpper}`,
+      html: `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+          <div style="background-color: #000; padding: 40px; text-align: center;">
+            <h1 style="color: #C9A84C; margin: 0; font-size: 28px; letter-spacing: 2px; text-transform: uppercase;">PMU SUPPLY</h1>
+          </div>
+          
+          <div style="padding: 40px; background-color: #fff; border: 1px solid #eee;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <div style="font-size: 40px; margin-bottom: 10px;">${statusIcon}</div>
+              <h2 style="font-size: 24px; font-weight: 400; margin: 0;">Order ${statusUpper}</h2>
+              <p style="font-size: 14px; color: #666; margin-top: 10px;">${statusMessage}</p>
+            </div>
+            
+            <div style="margin: 30px 0; padding: 25px; border: 1px solid #eee; border-radius: 12px; text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 2px;">Order ID</p>
+              <p style="margin: 10px 0; font-size: 18px; font-weight: 700; color: #000;">${id}</p>
+              <p style="font-size: 12px; color: #C9A84C; font-weight: 600; margin-top: 15px;">New Status: ${statusUpper}</p>
+            </div>
+          </div>
+          <div style="padding: 30px; text-align: center; font-size: 12px; color: #999;">
+            <p>© 2026 PMU SUPPLY. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Resend Error:", error);
+    return { success: false, error };
+  }
+}

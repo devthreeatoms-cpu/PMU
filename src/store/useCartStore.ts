@@ -93,8 +93,16 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   getCartTotal: () => {
     return get().items.reduce((total, item) => {
-      const variant = item.product.variants?.find(v => v.id === item.variantId);
-      const price = (item.product.salePrice ?? item.product.price) + (variant?.priceModifier || 0);
+      let price = item.product.salePrice ?? item.product.price;
+      
+      // New Variant System: use variant's specific price
+      if (item.variantId) {
+        const variant = item.product.variants?.find(v => v.id === item.variantId);
+        if (variant) {
+          price = variant.salePrice ?? variant.price;
+        }
+      }
+      
       return total + price * item.quantity;
     }, 0);
   },

@@ -14,8 +14,9 @@ export function FeaturedProducts() {
     async function load() {
       try {
         const all = await getProducts();
-        // Just take the first 4 for the featured section
-        setProducts(all.slice(0, 4));
+        // Filter active products and take the first 4 for the featured section
+        const activeProducts = all.filter(p => p.isActive !== false);
+        setProducts(activeProducts.slice(0, 4));
       } catch (error) {
         console.error("Error loading featured products:", error);
       } finally {

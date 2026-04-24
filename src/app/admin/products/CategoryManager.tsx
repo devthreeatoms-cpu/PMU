@@ -106,7 +106,7 @@ export default function CategoryManager() {
         <DialogHeader>
           <DialogTitle className="text-xl font-heading">Product Categorization</DialogTitle>
           <DialogDescription className="text-xs uppercase tracking-widest font-bold text-zinc-400">
-            Define artistry sectors for your inventory
+            Define product categories for your inventory
           </DialogDescription>
         </DialogHeader>
 

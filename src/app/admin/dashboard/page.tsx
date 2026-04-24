@@ -21,7 +21,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,8 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    const fetchData = async (silent = false) => {
+      if (!silent) setIsLoading(true);
       try {
         const res = await getDashboardStatsAction();
         if (res.success) {
@@ -48,12 +49,17 @@ export default function AdminDashboard() {
         const products = await getProducts();
         setHasProducts(products.length > 0);
       } catch (err) {
-        toast.error("Failed to load dashboard data");
+        if (!silent) toast.error("Failed to load dashboard data");
       } finally {
-        setIsLoading(false);
+        if (!silent) setIsLoading(false);
       }
     };
+
     fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => fetchData(true), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSeed = async () => {
@@ -84,7 +90,15 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-heading font-normal">Console Overview</h1>
-          <p className="text-zinc-500 text-sm mt-1">Real-time performance metrics and system health.</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-zinc-500 text-sm">Real-time performance metrics and system health.</p>
+            {stats?.lastUpdated && (
+              <span className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest flex items-center gap-1">
+                <RefreshCw className="w-2 h-2 animate-spin-slow" />
+                Live: {new Date(stats.lastUpdated).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           {!hasProducts && (
@@ -109,32 +123,32 @@ export default function AdminDashboard() {
         <KPICard 
           title="Total Revenue" 
           value={stats ? `₹${stats.totalRevenue.toLocaleString()}` : "₹0"} 
-          trend="+18.2%" 
-          trendUp={true} 
+          trend={stats?.revenueTrend || "0%"} 
+          trendUp={stats?.revenueTrendUp} 
           icon={<DollarSign className="w-4 h-4" />} 
           description="vs last month"
         />
         <KPICard 
           title="Total Orders" 
           value={stats ? stats.totalOrders : "0"} 
-          trend="+12.5%" 
-          trendUp={true} 
+          trend={stats?.ordersTrend || "0%"} 
+          trendUp={stats?.ordersTrendUp} 
           icon={<ShoppingCart className="w-4 h-4" />} 
           description="Real-time"
         />
         <KPICard 
-          title="Active Artists" 
-          value={stats ? stats.activeArtists : "0"} 
-          trend="+5.1%" 
-          trendUp={true} 
+          title="Active Users" 
+          value={stats ? stats.activeUsers : "0"} 
+          trend={stats?.activeUsersTrend || "0%"} 
+          trendUp={stats?.activeUsersTrendUp} 
           icon={<Users className="w-4 h-4" />} 
           description="Unique customers"
         />
         <KPICard 
-          title="Total Platform Users" 
+          title="Growth" 
           value={stats ? stats.totalUsers : "0"} 
-          trend="+22.4%" 
-          trendUp={true} 
+          trend={stats?.usersTrend || "0%"} 
+          trendUp={stats?.usersTrendUp} 
           icon={<TrendingUp className="w-4 h-4" />} 
           description="Registered accounts"
         />
@@ -231,25 +245,27 @@ export default function AdminDashboard() {
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-zinc-800">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-4">
-              {stats?.recentOrders?.length > 0 ? stats.recentOrders.map((order: any) => (
-                <Link href={`/admin/orders/${order.id}`} key={order.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 hover:border-brand-vibrant-pink/30 hover:bg-pink-50/30 transition-all group cursor-pointer">
+              {stats?.recentActivity?.length > 0 ? stats.recentActivity.map((activity: any) => (
+                <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 hover:border-brand-vibrant-pink/30 hover:bg-pink-50/30 transition-all group cursor-pointer">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] font-bold border border-zinc-200 uppercase text-zinc-400">
-                      {order.shippingAddress?.firstName?.[0] || 'U'}{order.shippingAddress?.lastName?.[0] || 'A'}
+                    <div className={`w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] font-bold border border-zinc-200 uppercase ${activity.type === 'order' ? 'text-zinc-400' : 'text-brand-gold'}`}>
+                      {activity.initials}
                     </div>
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-zinc-900">{order.shippingAddress?.firstName || 'Anonymos'} {order.shippingAddress?.lastName || 'User'}</p>
+                      <p className="text-xs font-bold text-zinc-900">{activity.title}</p>
                       <div className="flex items-center gap-2 text-[10px] text-zinc-400">
                         <Clock className="w-3 h-3" />
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(activity.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-black text-zinc-900">₹{(order.total || 0).toFixed(2)}</p>
-                    <span className="text-[9px] font-bold text-[#FF4D8D] uppercase tracking-tighter">{order.status}</span>
+                    <p className="text-xs font-black text-zinc-900">{activity.subtitle.split(' - ')[0]}</p>
+                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${activity.type === 'order' ? 'text-[#FF4D8D]' : 'text-emerald-500'}`}>
+                      {activity.type === 'order' ? activity.subtitle.split(' - ')[1] : 'MEMBER'}
+                    </span>
                   </div>
-                </Link>
+                </div>
               )) : (
                 <div className="py-8 text-center text-[10px] font-bold text-zinc-300 uppercase tracking-widest">No Recent Activity</div>
               )}

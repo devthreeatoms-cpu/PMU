@@ -40,7 +40,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { getAllUsersAction, setUserRoleAction, registerArtistAction } from "./actions";
+import { getAllUsersAction, setUserRoleAction, registerUserAction } from "./actions";
 import { UserProfile } from "@/lib/types";
 
 export default function AdminUsersPage() {
@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
       if (res.success && res.users) {
         setUsers(res.users);
       } else {
-        toast.error(res.error || "Failed to fetch artists");
+        toast.error(res.error || "Failed to fetch users");
       }
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -97,9 +97,9 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await registerArtistAction(regForm);
+      const res = await registerUserAction(regForm);
       if (res.success) {
-        toast.success("Artist registered successfully.");
+        toast.success("User registered successfully.");
         setIsRegisterOpen(false);
         setRegForm({ email: "", displayName: "", role: "customer" });
         await fetchUsers();
@@ -133,12 +133,12 @@ export default function AdminUsersPage() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `artist_directory_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `user_directory_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Artist directory exported.");
+    toast.success("User directory exported.");
   };
 
   const filteredUsers = users.filter(user => 
@@ -153,8 +153,8 @@ export default function AdminUsersPage() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-normal">Customer Intelligence</h1>
-          <p className="text-zinc-500 text-sm mt-1">Manage global artist network and account security.</p>
+          <h1 className="text-3xl font-heading font-normal">User Management</h1>
+          <p className="text-zinc-500 text-sm mt-1">Manage global user network and account security.</p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -170,15 +170,15 @@ export default function AdminUsersPage() {
           <Dialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen}>
             <DialogTrigger 
               render={
-                <Button size="sm" className="bg-zinc-950 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-8 flex gap-2">
-                  <UserPlus className="w-3 h-3" /> Register Artist
+                <Button size="sm" className="bg-brand-gold hover:bg-brand-gold/90 text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-8 flex gap-2">
+                  <UserPlus className="w-3 h-3" /> Register User
                 </Button>
               }
             />
             <DialogContent className="sm:max-w-[450px] rounded-[2.5rem] p-8 border-none shadow-2xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-heading">New Professional Account</DialogTitle>
-                <DialogDescription className="text-xs font-bold tracking-widest uppercase text-zinc-400">Initialize a new artist profile in the system.</DialogDescription>
+                <DialogTitle className="text-2xl font-heading">New User Account</DialogTitle>
+                <DialogDescription className="text-xs font-bold tracking-widest uppercase text-zinc-400">Initialize a new user profile in the system.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleRegister} className="space-y-6 mt-4">
                 <div className="space-y-2">
@@ -197,7 +197,7 @@ export default function AdminUsersPage() {
                     required
                     type="email"
                     className="h-12 rounded-2xl bg-zinc-50 border-zinc-100" 
-                    placeholder="artist@example.com"
+                    placeholder="user@example.com"
                     value={regForm.email}
                     onChange={(e) => setRegForm({...regForm, email: e.target.value})}
                   />
@@ -209,8 +209,8 @@ export default function AdminUsersPage() {
                     value={regForm.role}
                     onChange={(e) => setRegForm({...regForm, role: e.target.value})}
                   >
-                    <option value="customer">Artist (Standard)</option>
-                    <option value="admin">Administrator</option>
+                    <option value="customer">User (Customer)</option>
+                    <option value="admin">Admin (System Administrator)</option>
                   </select>
                 </div>
                 <Button type="submit" disabled={isSubmitting} className="w-full h-14 bg-brand-black hover:bg-brand-gold text-white rounded-2xl font-bold uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-zinc-900/10">
@@ -223,8 +223,8 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard title="Total Artists" value={isLoading ? "..." : users.length.toString()} icon={<UsersIcon className="w-4 h-4" />} />
-        <MetricCard title="Professional Artists" value={isLoading ? "..." : users.filter(u => u.role !== "admin").length.toString()} icon={<ShieldCheck className="w-4 h-4 text-emerald-500" />} />
+        <MetricCard title="Total Users" value={isLoading ? "..." : users.length.toString()} icon={<UsersIcon className="w-4 h-4" />} />
+        <MetricCard title="Customers" value={isLoading ? "..." : users.filter(u => u.role !== "admin").length.toString()} icon={<ShieldCheck className="w-4 h-4 text-emerald-500" />} />
         <MetricCard title="Admin Accounts" value={isLoading ? "..." : users.filter(u => u.role === "admin").length.toString()} icon={<ArrowUpRight className="w-4 h-4 text-emerald-500" />} />
       </div>
 
@@ -233,12 +233,12 @@ export default function AdminUsersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <Input 
             placeholder="Search by name, email or UID..." 
-            className="pl-10 h-11 border-zinc-100 rounded-2xl focus:ring-brand-gold/20 focus:border-brand-gold bg-white"
+            className="pl-10 h-11 border-zinc-100 rounded-full focus:ring-brand-gold/20 focus:border-brand-gold bg-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="h-11 rounded-2xl px-6 text-[10px] font-bold tracking-widest uppercase border-zinc-100 gap-3">
+        <Button variant="outline" className="h-11 rounded-full px-6 text-[10px] font-bold tracking-widest uppercase border-zinc-100 gap-3">
           <Filter className="w-3 h-3" /> Advanced Filter
         </Button>
       </div>
@@ -247,7 +247,7 @@ export default function AdminUsersPage() {
         <Table>
           <TableHeader className="bg-zinc-50/50">
             <TableRow>
-              <TableHead className="px-8 text-[10px] font-bold uppercase tracking-widest">Artist Profile</TableHead>
+              <TableHead className="px-8 text-[10px] font-bold uppercase tracking-widest">User Profile</TableHead>
                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Role</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Store Credit</TableHead>
               <TableHead className="text-right px-8 text-[10px] font-bold uppercase tracking-widest">Management</TableHead>

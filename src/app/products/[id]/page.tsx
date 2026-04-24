@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/useCartStore";
@@ -19,10 +19,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [product, setProduct] = useState<Product | null>(null);
   const [recommended, setRecommended] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const addItem = useCartStore((state) => state.addItem);
   const setIsOpen = useCartStore((state) => state.setIsOpen);
 
@@ -36,10 +36,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           getProducts()
         ]);
         
-        if (targetProduct) {
-          setProduct(targetProduct);
-          setActiveImage(0);
-          // Get 4 random products for recommendations, excluding current
+          if (targetProduct) {
+            setProduct(targetProduct);
+            setActiveImage(0);
+            
+            // Initialize default options
+            if (targetProduct.hasVariants && targetProduct.options) {
+              const defaults: Record<string, string> = {};
+              targetProduct.options.forEach(opt => {
+                if (opt.values.length > 0) defaults[opt.name] = opt.values[0];
+              });
+              setSelectedOptions(defaults);
+            }
+
+            // Get 4 random products for recommendations, excluding current
           const others = allProducts
             .filter(p => p.id !== targetProduct.id)
             .sort(() => 0.5 - Math.random())
@@ -56,12 +66,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     fetchData();
   }, [unwrappedParams.id]);
 
-  const currentVariant = product?.variants?.find(v => v.id === selectedVariant) || null;
-  const currentPrice = (product?.price || 0) + (currentVariant?.priceModifier || 0);
+  const currentVariant = useMemo(() => {
+    if (!product || !product.hasVariants || !product.variants) return null;
+    
+    // If no options selected yet, but we have variants, we should still try to resolve one
+    const optionsToMatch = Object.keys(selectedOptions).length > 0 
+      ? selectedOptions 
+      : (product.options || []).reduce((acc, opt) => ({ ...acc, [opt.name]: opt.values[0] }), {});
+
+    return product.variants.find(v => 
+      Object.entries(optionsToMatch).every(([key, value]) => v.combination[key] === value)
+    );
+  }, [product, selectedOptions]);
+
+  const currentPrice = currentVariant ? currentVariant.price : (product?.price || 0);
+  const currentStock = currentVariant ? currentVariant.stock : (product?.stock || 0);
+  const isOutOfStock = currentStock <= 0;
 
   const handleAddToCart = () => {
     if (product) {
-      addItem(product, quantity, selectedVariant || undefined, currentVariant?.name);
+      const variantName = currentVariant 
+        ? Object.values(currentVariant.combination).join(" / ")
+        : undefined;
+      addItem(product, quantity, currentVariant?.id, variantName);
       setIsOpen(true);
     }
   };
@@ -197,8 +224,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   {product.name}
                 </h1>
                 <div className="flex items-baseline gap-4 pt-2">
-                  <span className="text-2xl font-light text-zinc-900">₹{product.price.toFixed(2)}</span>
-                  <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase opacity-60">Professional Distribution</span>
+                  <span className="text-2xl font-light text-zinc-900">₹{currentPrice.toFixed(2)}</span>
+                  {currentVariant && currentVariant.salePrice && (
+                    <span className="text-sm line-through text-zinc-400">₹{currentVariant.salePrice.toFixed(2)}</span>
+                  )}
+                  <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase opacity-60">
+                    {isOutOfStock ? "Out of Stock" : "Professional Distribution"}
+                  </span>
                 </div>
                 <div className="pt-2">
                    <p className="text-[10px] text-zinc-500 font-light italic">
@@ -211,26 +243,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <p>{product.description}</p>
               </div>
 
-              {/* Variant Switcher - Modern Cards */}
-              {product.variants && product.variants.length > 0 && (
-                <div className="space-y-6">
-                  <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-400">Custom Specification</span>
-                  <div className="grid grid-cols-2 gap-4">
-                    {product.variants.map((v) => (
-                      <button
-                        key={v.id}
-                        onClick={() => setSelectedVariant(v.id)}
-                        className={`p-6 text-left border transition-all duration-500 ${
-                          selectedVariant === v.id 
-                          ? 'bg-brand-black text-white shadow-xl' 
-                          : 'bg-white border-zinc-100 text-zinc-400 hover:border-brand-gold hover:text-brand-gold'
-                        }`}
-                      >
-                         <p className="text-[8px] font-bold tracking-widest uppercase opacity-60 mb-2">{v.type}</p>
-                         <p className="font-bold tracking-widest text-xs uppercase">{v.name}</p>
-                      </button>
-                    ))}
-                  </div>
+              {/* Multi-Dimensional Variant Switcher */}
+              {product.hasVariants && product.options && product.options.length > 0 && (
+                <div className="space-y-8">
+                  {product.options.map((option) => (
+                    <div key={option.id} className="space-y-4">
+                      <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-400">{option.name}</span>
+                      <div className="flex flex-wrap gap-3">
+                        {option.values.map((val) => (
+                          <button
+                            key={val}
+                            onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
+                            className={`px-6 py-3 border transition-all duration-500 text-[10px] font-bold tracking-widest uppercase ${
+                              selectedOptions[option.name] === val 
+                              ? 'bg-brand-black text-white shadow-xl scale-105' 
+                              : 'bg-white border-zinc-100 text-zinc-400 hover:border-brand-gold hover:text-brand-gold'
+                            }`}
+                          >
+                             {val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -246,8 +281,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </button>
                     <span className="w-10 text-center font-bold text-xs tracking-widest">{quantity}</span>
                     <button 
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
                       className="p-2 text-zinc-400 hover:text-brand-black transition-colors"
+                      disabled={isOutOfStock}
                     >
                       <Plus size={14} />
                     </button>
@@ -255,10 +291,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   
                   <Button 
                     onClick={handleAddToCart}
-                    disabled={product.variants && product.variants.length > 0 && !selectedVariant}
+                    disabled={isOutOfStock || (product.hasVariants && !currentVariant)}
                     className="flex-1 h-14 bg-brand-black text-white hover:bg-brand-gold hover:text-white rounded-none font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-xl disabled:opacity-30 uppercase"
                   >
-                    Add to Cart
+                    {isOutOfStock ? "Sold Out" : "Add to Cart"}
                   </Button>
                 </div>
 

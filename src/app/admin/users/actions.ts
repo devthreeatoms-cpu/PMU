@@ -78,7 +78,7 @@ export async function setUserRoleAction(userId: string, role: 'admin' | 'custome
   }
 }
 
-export async function registerArtistAction(data: { email: string; displayName: string; role: string }) {
+export async function registerUserAction(data: { email: string; displayName: string; role: string }) {
   try {
     const { adminAuth } = await import("@/lib/firebase-admin");
     const userRecord = await adminAuth.createUser({
@@ -98,7 +98,7 @@ export async function registerArtistAction(data: { email: string; displayName: s
 
     return { success: true, uid: userRecord.uid };
   } catch (err: any) {
-    console.error("registerArtistAction error:", err);
+    console.error("registerUserAction error:", err);
     return { success: false, error: err.message };
   }
 }

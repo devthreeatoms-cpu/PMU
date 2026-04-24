@@ -179,8 +179,17 @@
   100% { transform: scale(1.1); }
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .animate-subtle-zoom {
   animation: subtle-zoom 20s infinite alternate ease-in-out;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
 }
 
 .animate-stroke {

@@ -102,6 +102,9 @@ function ProductGrid() {
       }
     }
 
+    // Status Filter (Only show active products)
+    result = result.filter(p => p.isActive !== false);
+
     // Availability Filter
     if (showInStockOnly) {
       result = result.filter(p => (p.stock || 0) > 0);

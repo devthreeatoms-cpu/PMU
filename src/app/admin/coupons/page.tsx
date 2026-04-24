@@ -233,7 +233,7 @@ export default function AdminCouponsPage() {
                       <SelectValue placeholder="Select target" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Verified Artists</SelectItem>
+                      <SelectItem value="all">All Verified Users</SelectItem>
                       <SelectItem value="new">First Time Buyers Only</SelectItem>
                       <SelectItem value="loyal">VIP Loyalty Tier</SelectItem>
                     </SelectContent>

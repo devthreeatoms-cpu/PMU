@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, ImagePlus, Loader2, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, X, AlertCircle, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -18,8 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ProductCategory, Product } from "@/lib/types";
 import { getProductAction, updateProductAction } from "../actions";
+import VariantManager from "../VariantManager";
+import { ProductOption, ProductVariant } from "@/lib/types";
 
 import { getCategoriesAction } from "../category-actions";
 
@@ -38,7 +41,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     sku: "",
     category: "",
     stock: "0",
+    isActive: true,
   });
+  
+  const [hasVariants, setHasVariants] = useState(false);
+  const [options, setOptions] = useState<ProductOption[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,7 +78,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             sku: p.sku || "",
             category: p.category,
             stock: p.stock.toString(),
+            isActive: p.isActive !== false,
           });
+          setHasVariants(p.hasVariants || false);
+          setOptions(p.options || []);
+          setVariants(p.variants || []);
           setImageUrls(p.imageUrls || []);
         } else {
           setError(result.error || "Failed to load product");
@@ -121,6 +133,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const result = await updateProductAction(unwrappedParams.id, {
         ...formData,
         imageUrls,
+        hasVariants,
+        options: hasVariants ? options : [],
+        variants: hasVariants ? variants : [],
       });
 
       if (!result.success) throw new Error(result.error);
@@ -201,41 +216,79 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
           <Card className="rounded-[2.5rem] border-zinc-100 shadow-sm overflow-hidden">
             <CardHeader className="bg-zinc-50/50 border-b border-zinc-50">
-              <CardTitle className="text-lg">Economics & Supply</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Economics & Supply</CardTitle>
+                <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-zinc-100 shadow-sm">
+                  <Label htmlFor="variant-toggle" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Has Variants</Label>
+                  <Switch 
+                    id="variant-toggle"
+                    checked={hasVariants}
+                    onCheckedChange={setHasVariants}
+                  />
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="grid sm:grid-cols-2 gap-6 pt-8">
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Regular Asset Value (₹)</Label>
-                <Input 
-                  id="price" type="number" step="0.01" value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  required className="h-12 bg-zinc-50/50 border-zinc-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="salePrice" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Promotional Value (₹)</Label>
-                <Input 
-                  id="salePrice" type="number" step="0.01" value={formData.salePrice}
-                  onChange={(e) => setFormData({...formData, salePrice: e.target.value})}
-                  className="h-12 bg-zinc-50/50 border-zinc-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Reference SKU</Label>
-                <Input 
-                  id="sku" value={formData.sku}
-                  onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                  className="h-12 bg-zinc-50/50 border-zinc-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stock" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Available Inventory</Label>
-                <Input 
-                  id="stock" type="number" value={formData.stock}
-                  onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                  required className="h-12 bg-zinc-50/50 border-zinc-100"
-                />
-              </div>
+            <CardContent className="pt-8">
+              {!hasVariants ? (
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Regular Asset Value (₹)</Label>
+                    <Input 
+                      id="price" type="number" step="0.01" value={formData.price}
+                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      required className="h-12 bg-zinc-50/50 border-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="salePrice" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Promotional Value (₹)</Label>
+                    <Input 
+                      id="salePrice" type="number" step="0.01" value={formData.salePrice}
+                      onChange={(e) => setFormData({...formData, salePrice: e.target.value})}
+                      className="h-12 bg-zinc-50/50 border-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sku" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Reference SKU</Label>
+                    <Input 
+                      id="sku" value={formData.sku}
+                      onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                      className="h-12 bg-zinc-50/50 border-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stock" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Available Inventory</Label>
+                    <Input 
+                      id="stock" type="number" value={formData.stock}
+                      onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                      required className="h-12 bg-zinc-50/50 border-zinc-100"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                   <div className="bg-brand-gold/5 border border-brand-gold/10 p-5 rounded-[2rem] flex gap-5 items-start">
+                      <div className="bg-white p-3 rounded-2xl shadow-sm">
+                        <Info className="h-5 w-5 text-brand-gold" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-zinc-900 uppercase tracking-tight">Multi-Dimensional Tracking</p>
+                        <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed italic">
+                          This product uses a variant matrix. Base pricing and inventory are overridden by the individual combination specifications below.
+                        </p>
+                      </div>
+                    </div>
+                    <VariantManager 
+                      options={options}
+                      variants={variants}
+                      basePrice={parseFloat(formData.price) || 0}
+                      baseSku={formData.sku}
+                      onChange={(opts, vars) => {
+                        setOptions(opts);
+                        setVariants(vars);
+                      }}
+                    />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -261,6 +314,25 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+             </CardContent>
+          </Card>
+
+          <Card className="rounded-[2.5rem] border-zinc-100 shadow-sm overflow-hidden">
+             <CardHeader className="bg-zinc-50/50 border-b border-zinc-50">
+                <CardTitle className="text-lg">Visibility Status</CardTitle>
+             </CardHeader>
+             <CardContent className="pt-8">
+                <div className="flex items-center justify-between p-4 bg-zinc-50/50 rounded-2xl border border-zinc-100">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="status" className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Storefront Visibility</Label>
+                    <p className="text-[9px] text-zinc-400">Control if this product is visible to customers.</p>
+                  </div>
+                  <Switch 
+                    id="status"
+                    checked={formData.isActive} 
+                    onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                  />
                 </div>
              </CardContent>
           </Card>
