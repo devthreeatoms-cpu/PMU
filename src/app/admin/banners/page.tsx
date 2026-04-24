@@ -13,7 +13,8 @@ import {
   EyeOff,
   Palette,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,11 @@ export default function AdminBannersPage() {
     order: 0
   });
 
-  const { uploadImage, isUploading } = useImageUpload();
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { uploadImage, isUploading, isProcessing, progress } = useImageUpload();
 
   useEffect(() => {
     loadBanners();
@@ -67,18 +72,33 @@ export default function AdminBannersPage() {
   }
 
   const handleSave = async () => {
-    if (!currentBanner.title || !currentBanner.imageUrl) {
+    if (!currentBanner.title || (!currentBanner.imageUrl && !pendingFile)) {
       toast.error("Title and Image are required");
       return;
     }
 
+    setIsSaving(true);
     try {
+      let finalImageUrl = currentBanner.imageUrl || "";
+
+      if (pendingFile) {
+        toast.info("Uploading banner image...");
+        const result = await uploadImage(pendingFile, "banners/");
+        if (result.url) {
+          finalImageUrl = result.url;
+        } else {
+          throw new Error(result.error || "Upload failed");
+        }
+      }
+
+      const bannerData = { ...currentBanner, imageUrl: finalImageUrl };
+
       if (currentBanner.id) {
-        await updateBannerAction(currentBanner.id, currentBanner);
+        await updateBannerAction(currentBanner.id, bannerData);
         toast.success("Banner updated successfully");
       } else {
         await addBannerAction({
-          ...currentBanner as Banner,
+          ...bannerData as Banner,
           order: banners.length + 1
         });
         toast.success("Banner added successfully");
@@ -86,8 +106,10 @@ export default function AdminBannersPage() {
       setIsEditing(false);
       resetForm();
       loadBanners();
-    } catch (error) {
-      toast.error("Failed to save banner");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save banner");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -102,18 +124,21 @@ export default function AdminBannersPage() {
     }
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const result = await uploadImage(file, "banners");
-      if (result && result.url) {
-        setCurrentBanner(prev => ({ ...prev, imageUrl: result.url }));
-        toast.success("Image uploaded");
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setPendingFile(file);
+      toast.success("Image selected for upload");
     }
   };
 
   const resetForm = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl("");
+    setPendingFile(null);
     setCurrentBanner({
       title: "",
       subtitle: "",
@@ -250,15 +275,20 @@ export default function AdminBannersPage() {
                         />
                       </div>
                       <div className="relative h-12">
-                        <Button variant="outline" className="w-full h-full rounded-xl border-dashed border-2 hover:bg-zinc-50" disabled={isUploading}>
-                          {isUploading ? "Uploading..." : "Upload New Image"}
+                        <Button variant="outline" className="w-full h-full rounded-xl border-dashed border-2 hover:bg-zinc-50" disabled={isSaving}>
+                          {isSaving && isUploading ? (
+                             <div className="flex items-center gap-2">
+                               <Loader2 className="w-4 h-4 animate-spin" />
+                               <span className="text-[10px]">{Math.round(progress)}%</span>
+                             </div>
+                          ) : "Select New Image"}
                         </Button>
                         <input 
                           type="file" 
                           accept="image/*" 
                           onChange={handleImageChange}
                           className="absolute inset-0 opacity-0 cursor-pointer"
-                          disabled={isUploading}
+                          disabled={isSaving}
                         />
                       </div>
                     </div>
@@ -351,12 +381,15 @@ export default function AdminBannersPage() {
                             {currentBanner.buttonText || "SHOP NOW"}
                           </Button>
                         </div>
-                        <div className="w-24 aspect-square rounded-xl overflow-hidden shadow-lg border-2 border-white bg-zinc-50">
+                        <div className="w-24 aspect-square rounded-xl overflow-hidden shadow-lg border-2 border-white bg-zinc-50 relative">
                           <img 
-                            src={currentBanner.imageUrl || "https://placehold.co/400x400?text=No+Image"} 
+                            src={previewUrl || currentBanner.imageUrl || "https://placehold.co/400x400?text=No+Image"} 
                             alt="Preview" 
                             className="w-full h-full object-cover"
                           />
+                          {pendingFile && (
+                            <div className="absolute top-1 right-1 bg-brand-gold text-white text-[6px] px-1.5 py-0.5 rounded-full font-bold uppercase">Pending</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -366,8 +399,9 @@ export default function AdminBannersPage() {
         </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-zinc-100">
-            <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-8">Cancel</Button>
-            <Button onClick={handleSave} className="bg-brand-black text-white rounded-xl px-12 hover:bg-zinc-800 transition-all">
+            <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-8" disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSave} className="bg-brand-black text-white rounded-xl px-12 hover:bg-zinc-800 transition-all" disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {currentBanner.id ? 'Update Banner' : 'Create Banner'}
             </Button>
           </div>

@@ -15,6 +15,37 @@ export function useImageUpload() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const convertToWebP = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error("Failed to get canvas context"));
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Canvas toBlob failed"));
+            }
+          }, 'image/webp', 0.8);
+        };
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadImage = async (file: File, path: string = 'products/'): Promise<UploadResult> => {
     setIsUploading(true);
     setIsProcessing(true);
@@ -35,17 +66,30 @@ export function useImageUpload() {
 
       try {
         fileToUpload = await imageCompression(file, options);
+        
+        // If the result is NOT webp, try manual conversion
+        if (fileToUpload.type !== 'image/webp') {
+           console.log("Compression didn't result in WebP, converting manually...");
+           fileToUpload = await convertToWebP(file);
+        }
       } catch (compressionErr) {
-        console.warn("Compression failed, falling back to original file:", compressionErr);
-        // Fallback to original file if compression fails or takes too long
-        fileToUpload = file;
+        console.warn("Compression failed, attempting manual WebP conversion:", compressionErr);
+        try {
+          fileToUpload = await convertToWebP(file);
+        } catch (convErr) {
+          console.error("Manual conversion also failed:", convErr);
+          fileToUpload = file; // Fallback to original
+        }
       }
       
       setIsProcessing(false);
 
-      // Create a unique filename
-      const extension = fileToUpload.type.split('/')[1] || 'jpg';
-      const filename = `${Date.now()}_${file.name.split('.')[0]}.${extension}`;
+      // Create a clean, unique filename with .webp extension
+      const sanitizedName = file.name.split('.')[0]
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase()
+        .substring(0, 50);
+      const filename = `${Date.now()}_${sanitizedName}.webp`;
       const storageRef = ref(storage, `${path}${filename}`);
 
       // 2. Upload to Firebase Storage

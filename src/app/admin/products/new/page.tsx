@@ -49,8 +49,9 @@ export default function AddProductPage() {
   const [options, setOptions] = useState<ProductOption[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [images, setImages] = useState<{url: string, file?: File}[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     async function loadCategories() {
@@ -65,30 +66,27 @@ export default function AddProductPage() {
 
   const handleExternalImageAdd = () => {
     const url = window.prompt("Paste the image URL:");
-    if (url) setImageUrls(prev => [...prev, url]);
+    if (url) setImages(prev => [...prev, { url }]);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
 
-    try {
-      toast.info("Uploading & optimizing image...");
-      const result = await uploadImage(file, 'products/');
-      if (result.url) {
-        setImageUrls(prev => [...prev, result.url]);
-        toast.success("Image uploaded successfully");
-      }
-      if (result.error) {
-        toast.error("Upload failed: " + result.error);
-      }
-    } catch (err) {
-      toast.error("Something went wrong during upload");
-    }
+    const newImages = Array.from(files).map(file => ({
+      url: URL.createObjectURL(file),
+      file
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
   };
 
   const removeImage = (index: number) => {
-    setImageUrls(prev => prev.filter((_, i) => i !== index));
+    const imageToRemove = images[index];
+    if (imageToRemove.file) {
+      URL.revokeObjectURL(imageToRemove.url);
+    }
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,17 +98,33 @@ export default function AddProductPage() {
     setIsSubmitting(true);
     
     try {
-      // Use Server Action to bypass Firestore Client Security Rules
+      // 1. Upload pending files first
+      const finalImageUrls: string[] = [];
+      const filesToUpload = images.filter(img => img.file);
+      const existingUrls = images.filter(img => !img.file).map(img => img.url);
+
+      if (filesToUpload.length > 0) {
+        toast.info(`Uploading ${filesToUpload.length} image(s)...`);
+      }
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const item = filesToUpload[i];
+        if (item.file) {
+          const result = await uploadImage(item.file, 'products/');
+          if (result.url) {
+            finalImageUrls.push(result.url);
+          } else {
+            throw new Error(result.error || "Failed to upload an image");
+          }
+        }
+      }
+
+      const allUrls = [...existingUrls, ...finalImageUrls];
+
+      // 2. Create product with final URLs
       const result = await createProductAction({
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        salePrice: formData.salePrice,
-        sku: formData.sku,
-        category: formData.category,
-        stock: formData.stock,
-        imageUrls,
-        isActive: formData.isActive,
+        ...formData,
+        imageUrls: allUrls,
         hasVariants,
         options: hasVariants ? options : [],
         variants: hasVariants ? variants : [],
@@ -308,9 +322,9 @@ export default function AddProductPage() {
               <CardDescription>Upload files (converted to WebP automatically) or add external URL links.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {imageUrls.map((url, i) => (
+              {images.map((img, i) => (
                 <div key={i} className="relative group rounded-md overflow-hidden border aspect-square">
-                  <img src={url} alt={`preview ${i}`} className="object-cover w-full h-full" />
+                  <img src={img.url} alt={`preview ${i}`} className="object-cover w-full h-full" />
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
@@ -318,6 +332,11 @@ export default function AddProductPage() {
                   >
                     <X className="w-4 h-4" />
                   </button>
+                  {img.file && (
+                    <div className="absolute bottom-2 left-2 bg-brand-gold text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm uppercase tracking-widest">
+                      Pending
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -330,7 +349,7 @@ export default function AddProductPage() {
                     onChange={handleFileUpload}
                     disabled={isUploading}
                   />
-                  {isUploading ? (
+                  {isSubmitting && isUploading ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-6 h-6 animate-spin text-brand-gold" />
                       <span className="text-[10px] font-bold text-brand-gold animate-pulse">
