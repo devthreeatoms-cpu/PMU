@@ -139,8 +139,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-start">
             
             {/* Gallery Column */}
-            <div className="space-y-6 sticky top-32">
-              <div className="relative aspect-square md:aspect-[4/5] bg-white border border-zinc-100 overflow-hidden group">
+            <div className="space-y-6 lg:sticky lg:top-32">
+              <div className="relative aspect-square md:max-h-[500px] bg-white border border-zinc-100 overflow-hidden group mx-auto">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeImage}
@@ -196,16 +196,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               )}
 
               {/* Minimalist Tech Bar */}
-              <div className="grid grid-cols-3 gap-3 pt-6">
-                <div className="p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-2 text-center transition-colors hover:bg-zinc-50">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 pt-6">
+                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
                    <Zap className="w-4 h-4 text-brand-gold" />
                    <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">High Precision</span>
                 </div>
-                <div className="p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-2 text-center transition-colors hover:bg-zinc-50">
+                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
                    <ShieldCheck className="w-4 h-4 text-brand-gold" />
                    <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">Sterilized</span>
                 </div>
-                <div className="p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-2 text-center transition-colors hover:bg-zinc-50">
+                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
                    <Droplet className="w-4 h-4 text-brand-gold" />
                    <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">Optimized Flow</span>
                 </div>
@@ -220,7 +220,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <div className="h-px w-6 bg-brand-gold/30" />
                   <span className="text-brand-gold text-[9px] font-bold tracking-[0.4em] uppercase">{product.category}</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-heading leading-tight text-zinc-900">
+                <h1 className="text-3xl md:text-5xl font-heading leading-tight text-zinc-900 break-words">
                   {product.name}
                 </h1>
                 <div className="flex items-baseline gap-4 pt-2">
@@ -270,9 +270,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               )}
 
               {/* Action Area */}
-              <div className="pt-10 border-t border-zinc-100 space-y-8">
-                <div className="flex flex-col sm:flex-row gap-5">
-                  <div className="flex items-center bg-zinc-50 rounded-none px-5 h-14 border border-zinc-100">
+              <div className="pt-4 md:pt-10 border-t border-zinc-100 space-y-4 md:space-y-8">
+                <div className="flex flex-row gap-2 md:gap-5">
+                  <div className="flex items-center bg-zinc-50 rounded-none px-2 md:px-5 h-10 md:h-14 border border-zinc-100 shrink-0">
                     <button 
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="p-2 text-zinc-400 hover:text-brand-black transition-colors"
@@ -292,7 +292,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <Button 
                     onClick={handleAddToCart}
                     disabled={isOutOfStock || (product.hasVariants && !currentVariant)}
-                    className="flex-1 h-14 bg-brand-black text-white hover:bg-brand-gold hover:text-white rounded-none font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-xl disabled:opacity-30 uppercase"
+                    className="flex-1 h-10 md:h-14 bg-brand-black text-white hover:bg-brand-gold hover:text-white rounded-none font-bold tracking-[0.4em] text-[9px] md:text-[10px] transition-all duration-700 shadow-xl disabled:opacity-30 uppercase"
                   >
                     {isOutOfStock ? "Sold Out" : "Add to Cart"}
                   </Button>
@@ -321,7 +321,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <div className="w-12 h-0.5 bg-brand-gold mx-auto" />
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
               {recommended.map((item) => (
                 <Link key={item.id} href={`/products/${item.id}`} className="group block space-y-4">
                   <div className="relative aspect-square rounded-none overflow-hidden bg-zinc-50 border border-zinc-100 transition-all duration-700 group-hover:shadow-lg">

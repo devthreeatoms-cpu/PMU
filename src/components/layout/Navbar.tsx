@@ -77,8 +77,8 @@ export function Navbar() {
     <>
       <header className="relative w-full bg-white border-b">
         {announcement && (
-          <div className="bg-brand-rose text-brand-black py-2 border-b border-brand-gold/10 text-center">
-            <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase">
+          <div className="bg-brand-rose text-brand-black py-2 border-b border-brand-gold/10 text-center px-4">
+            <span className="text-[10px] md:text-xs font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase block break-words whitespace-normal leading-relaxed">
               {announcement}
             </span>
           </div>
@@ -99,34 +99,34 @@ export function Navbar() {
 
             {/* Logo - Centered for Premium Look */}
             <div className="flex-shrink-0 flex justify-center lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-              <Link href={user ? "/home" : "/"} className="font-heading font-bold text-2xl md:text-4xl tracking-tighter text-brand-black uppercase">
+              <Link href={user ? "/home" : "/"} className="font-heading font-bold text-xl md:text-4xl tracking-tighter text-brand-black uppercase">
                 PMU<span className="text-brand-gold pl-1">SUPPLY</span>
               </Link>
             </div>
 
             {/* Action Icons */}
             <div className="flex-1 flex items-center justify-end gap-1 md:gap-4">
-              <button onClick={() => setIsSearchOpen(true)} className="p-2 hover:text-brand-gold transition-colors group">
-                <Search className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <button onClick={() => setIsSearchOpen(true)} className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
+                <Search className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
               </button>
               {user ? (
-                <div className="flex items-center gap-1 md:gap-2">
-                  <Link href="/profile" className="p-2 hover:text-brand-gold transition-colors group">
-                    <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                <div className="flex items-center gap-0.5 md:gap-2">
+                  <Link href="/profile" className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
+                    <User className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
                   </Link>
-                  <button onClick={handleLogout} className="p-2 hover:text-red-500 transition-colors group">
-                    <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  <button onClick={handleLogout} className="p-1.5 md:p-2 hover:text-red-500 transition-colors group">
+                    <LogOut className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
                   </button>
                 </div>
               ) : (
-                <Link href="/login" className="p-2 hover:text-brand-gold transition-colors group">
-                  <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                <Link href="/login" className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
+                  <User className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
                 </Link>
               )}
-              <button onClick={() => setIsOpen(true)} className="relative p-2 hover:text-brand-gold transition-colors group">
-                <ShoppingCart className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <button onClick={() => setIsOpen(true)} className="relative p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
+                <ShoppingCart className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
                 {mounted && getCartCount() > 0 && (
-                  <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-brand-gold text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-brand-gold text-white text-[8px] md:text-[10px] font-bold flex items-center justify-center">
                     {getCartCount()}
                   </span>
                 )}
