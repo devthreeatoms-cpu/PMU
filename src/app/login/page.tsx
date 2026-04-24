@@ -152,9 +152,9 @@ function LoginForm() {
                   <Dialog>
                     <DialogTrigger 
                       render={
-                        <span className="text-xs text-brand-gold hover:underline font-medium cursor-pointer">
+                        <button type="button" className="text-xs text-brand-gold hover:underline font-medium">
                           Forgot password?
-                        </span>
+                        </button>
                       }
                     />
                     <DialogContent className="sm:max-w-[425px]">
