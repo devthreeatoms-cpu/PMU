@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import Link from "next/link";
 import { Product, ShopAllSettings } from "@/lib/types";
 import { DEFAULT_SHOP_ALL_SETTINGS, getShopAllSettings } from "@/lib/services/admin";
@@ -31,6 +31,7 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
   const [showInStockOnly, setShowInStockOnly] = useState(false);
   const [priceFilterOpen, setPriceFilterOpen] = useState(false);
   const [sortFilterOpen, setSortFilterOpen] = useState(false);
+  const [priceRange, setPriceRange] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
   // Reset to page 1 on filter/sort change
   useEffect(() => {
     setCurrentPage(1);
-  }, [categoryParam, sortBy, showInStockOnly]);
+  }, [categoryParam, sortBy, showInStockOnly, priceRange]);
 
   const filteredProducts = useMemo(() => {
     let result = [...initialProducts];
@@ -76,6 +77,17 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
     // Availability filter
     if (showInStockOnly) result = result.filter((p) => (p.stock || 0) > 0);
 
+    // Price range filter
+    if (priceRange) {
+      result = result.filter((p) => {
+        const price = p.salePrice || p.price;
+        if (priceRange === "under-1000") return price < 1000;
+        if (priceRange === "1000-5000") return price >= 1000 && price <= 5000;
+        if (priceRange === "over-5000") return price > 5000;
+        return true;
+      });
+    }
+
     // Sorting
     result.sort((a, b) => {
       switch (sortBy) {
@@ -91,7 +103,7 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
     });
 
     return result;
-  }, [categoryParam, initialProducts, initialCategories, sortBy, showInStockOnly]);
+  }, [categoryParam, initialProducts, initialCategories, sortBy, showInStockOnly, priceRange]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
@@ -121,9 +133,9 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
   return (
     <>
       {/* Filter Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6 py-6 border-b border-zinc-100 mb-12">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 py-4 md:py-6 border-b border-zinc-100 mb-8 md:mb-12">
+        <div className="w-full md:w-auto flex items-center overflow-x-auto md:overflow-visible no-scrollbar pb-2 md:pb-0">
+          <div className="flex items-center gap-4 md:gap-8 min-w-max">
             <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-900">
               Viewing: <span className="text-brand-gold ml-2">{activeCategoryName}</span>
             </span>
@@ -152,21 +164,59 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
                 />
               </button>
               {priceFilterOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-zinc-100 shadow-xl z-50 p-4 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                  <p className="text-[9px] text-zinc-400 uppercase tracking-widest mb-2">Filter by Price</p>
-                  <div className="space-y-2">
-                    <button onClick={() => setPriceFilterOpen(false)} className="block w-full text-left text-[10px] hover:text-brand-gold transition-colors font-bold uppercase">Under ₹1,000</button>
-                    <button onClick={() => setPriceFilterOpen(false)} className="block w-full text-left text-[10px] hover:text-brand-gold transition-colors font-bold uppercase">₹1,000 – ₹5,000</button>
-                    <button onClick={() => setPriceFilterOpen(false)} className="block w-full text-left text-[10px] hover:text-brand-gold transition-colors font-bold uppercase">Over ₹5,000</button>
+                <>
+                  {/* Mobile Backdrop */}
+                  <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[90] md:hidden" onClick={() => setPriceFilterOpen(false)} />
+                  
+                  <div className="md:absolute fixed md:top-full max-md:bottom-0 max-md:left-0 max-md:right-0 md:left-0 mt-2 md:w-48 w-full bg-white border md:border-zinc-100 shadow-2xl z-[100] py-4 md:py-2 md:rounded-xl max-md:rounded-t-[2rem] animate-in max-md:slide-in-from-bottom md:fade-in md:zoom-in-95 duration-300">
+                    <div className="px-6 md:px-4 py-2 border-b border-zinc-50 flex justify-between items-center">
+                      <p className="text-[10px] md:text-[9px] text-zinc-400 uppercase tracking-widest">Price Range</p>
+                      <div className="flex items-center gap-4">
+                        {priceRange && (
+                          <button 
+                            onClick={() => {
+                              setPriceRange(null);
+                              setPriceFilterOpen(false);
+                            }}
+                            className="text-[9px] md:text-[8px] font-bold text-brand-gold uppercase border-b border-brand-gold/30"
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <button onClick={() => setPriceFilterOpen(false)} className="md:hidden text-zinc-300">
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="py-4 md:py-2 space-y-1">
+                      <button 
+                        onClick={() => { setPriceRange("under-1000"); setPriceFilterOpen(false); }} 
+                        className={`block w-full text-left px-6 md:px-4 py-4 md:py-2 text-xs md:text-[10px] transition-colors font-bold uppercase ${priceRange === "under-1000" ? "text-brand-gold bg-zinc-50" : "text-zinc-600 hover:bg-zinc-50 hover:text-brand-gold"}`}
+                      >
+                        Under ₹1,000
+                      </button>
+                      <button 
+                        onClick={() => { setPriceRange("1000-5000"); setPriceFilterOpen(false); }} 
+                        className={`block w-full text-left px-6 md:px-4 py-4 md:py-2 text-xs md:text-[10px] transition-colors font-bold uppercase ${priceRange === "1000-5000" ? "text-brand-gold bg-zinc-50" : "text-zinc-600 hover:bg-zinc-50 hover:text-brand-gold"}`}
+                      >
+                        ₹1,000 – ₹5,000
+                      </button>
+                      <button 
+                        onClick={() => { setPriceRange("over-5000"); setPriceFilterOpen(false); }} 
+                        className={`block w-full text-left px-6 md:px-4 py-4 md:py-2 text-xs md:text-[10px] transition-colors font-bold uppercase ${priceRange === "over-5000" ? "text-brand-gold bg-zinc-50" : "text-zinc-600 hover:bg-zinc-50 hover:text-brand-gold"}`}
+                      >
+                        Over ₹5,000
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-4 relative">
+        <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-4 md:gap-8">
+          <div className="flex items-center gap-2 md:gap-4 relative">
             <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">Sort by:</span>
             <button
               onClick={() => {
@@ -189,29 +239,42 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
               />
             </button>
             {sortFilterOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-zinc-100 shadow-xl z-50 py-2 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                {[
-                  { id: "alphabetical-az", label: "Alphabetically, A-Z" },
-                  { id: "alphabetical-za", label: "Alphabetically, Z-A" },
-                  { id: "price-low-high", label: "Price, Low to High" },
-                  { id: "price-high-low", label: "Price, High to Low" },
-                ].map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => {
-                      setSortBy(option.id);
-                      setSortFilterOpen(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 text-[10px] transition-colors font-bold uppercase ${
-                      sortBy === option.id
-                        ? "text-brand-gold bg-zinc-50"
-                        : "text-zinc-600 hover:bg-zinc-50 hover:text-brand-gold"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+              <>
+                {/* Mobile Backdrop */}
+                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[90] md:hidden" onClick={() => setSortFilterOpen(false)} />
+                
+                <div className="md:absolute fixed md:top-full max-md:bottom-0 max-md:left-0 max-md:right-0 md:right-0 mt-2 md:w-56 w-full bg-white border md:border-zinc-100 shadow-2xl z-[100] py-4 md:py-2 md:rounded-xl max-md:rounded-t-[2rem] animate-in max-md:slide-in-from-bottom md:fade-in md:zoom-in-95 duration-300">
+                  <div className="px-6 md:px-4 py-2 border-b border-zinc-50 flex justify-between items-center">
+                    <p className="text-[10px] md:text-[9px] text-zinc-400 uppercase tracking-widest">Sort Order</p>
+                    <button onClick={() => setSortFilterOpen(false)} className="md:hidden text-zinc-300">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="py-4 md:py-2 space-y-1">
+                    {[
+                      { id: "alphabetical-az", label: "Alphabetically, A-Z" },
+                      { id: "alphabetical-za", label: "Alphabetically, Z-A" },
+                      { id: "price-low-high", label: "Price, Low to High" },
+                      { id: "price-high-low", label: "Price, High to Low" },
+                    ].map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => {
+                          setSortBy(option.id);
+                          setSortFilterOpen(false);
+                        }}
+                        className={`block w-full text-left px-6 md:px-4 py-4 md:py-2 text-xs md:text-[10px] transition-colors font-bold uppercase ${
+                          sortBy === option.id
+                            ? "text-brand-gold bg-zinc-50"
+                            : "text-zinc-600 hover:bg-zinc-50 hover:text-brand-gold"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
           <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
@@ -222,7 +285,7 @@ export function ProductGridClient({ initialProducts, initialCategories }: Produc
 
       {/* Product Grid */}
       <div
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12"
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 mb-12"
         style={{ gap: `${settings.grid.gap}px` }}
       >
         {paginatedProducts.map((product) => (

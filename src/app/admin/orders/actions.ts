@@ -12,12 +12,14 @@ export async function getOrdersAction(status?: string) {
       .orderBy("createdAt", "desc")
       .get();
       
+    console.log(`Fetched ${snapshot.size} orders from Firestore`);
+
     let orders = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     })) as Order[];
 
-    if (status && status !== "all") {
+    if (status && status !== "all" && status !== "recent") {
       orders = orders.filter(o => o.status === status);
     }
     

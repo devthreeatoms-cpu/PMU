@@ -59,6 +59,13 @@ const defaultCoupon: Partial<Coupon> = {
   expiryDate: undefined
 };
 
+function getCouponStatus(coupon: Coupon) {
+  if (!coupon.isActive) return "Inactive";
+  if (coupon.expiryDate && coupon.expiryDate < Date.now()) return "Expired";
+  if (coupon.usageLimit && (coupon.usageCount || 0) >= coupon.usageLimit) return "Max Usage";
+  return "Active";
+}
+
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -259,9 +266,21 @@ export default function AdminCouponsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <StatsPreview title="Active Codes" value={coupons.filter(c => c.isActive).length.toString()} icon={<Ticket className="w-4 h-4" />} />
-         <StatsPreview title="Total Created" value={coupons.length.toString()} icon={<Target className="w-4 h-4" />} />
-         <StatsPreview title="Expired" value={coupons.filter(c => !c.isActive).length.toString()} icon={<CheckCircle2 className="w-4 h-4 text-emerald-500" />} />
+         <StatsPreview 
+           title="Active Codes" 
+           value={coupons.filter(c => getCouponStatus(c) === "Active").length.toString()} 
+           icon={<Ticket className="w-4 h-4" />} 
+         />
+         <StatsPreview 
+           title="Total Created" 
+           value={coupons.length.toString()} 
+           icon={<Target className="w-4 h-4" />} 
+         />
+         <StatsPreview 
+           title="Expired / Inactive" 
+           value={coupons.filter(c => getCouponStatus(c) !== "Active").length.toString()} 
+           icon={<AlertCircle className="w-4 h-4 text-brand-gold" />} 
+         />
       </div>
 
       <div className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden mt-8">
@@ -324,9 +343,19 @@ export default function AdminCouponsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`rounded-full px-3 py-1 font-bold text-[9px] uppercase tracking-tighter border ${coupon.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-zinc-100 text-zinc-400 border-zinc-200'}`}>
-                      {coupon.isActive ? "Active" : "Inactive"}
-                    </Badge>
+                    {(() => {
+                      const status = getCouponStatus(coupon);
+                      return (
+                        <Badge className={`rounded-full px-3 py-1 font-bold text-[9px] uppercase tracking-tighter border ${
+                          status === "Active" ? "bg-emerald-50 text-emerald-600 border-emerald-100" : 
+                          status === "Expired" ? "bg-red-50 text-red-600 border-red-100" :
+                          status === "Max Usage" ? "bg-amber-50 text-amber-600 border-amber-100" :
+                          "bg-zinc-100 text-zinc-400 border-zinc-200"
+                        }`}>
+                          {status}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-right px-8">
                     <div className="flex justify-end gap-2">

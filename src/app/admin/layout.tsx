@@ -14,7 +14,8 @@ import {
   LayoutTemplate,
   Menu,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Grid3X3
 } from "lucide-react";
 import { AdminGuard } from "@/components/auth/AdminGuard";
 import { usePathname, useRouter } from "next/navigation";
@@ -54,6 +55,7 @@ export default function AdminLayout({
     { href: "/admin/orders", icon: <ShoppingCart size={20} />, label: "Orders", active: pathname.startsWith("/admin/orders") },
     { href: "/admin/coupons", icon: <Ticket size={20} />, label: "Coupons", active: pathname === "/admin/coupons" },
     { href: "/admin/users", icon: <Users size={20} />, label: "Users", active: pathname === "/admin/users" },
+    { href: "/admin/results", icon: <Grid3X3 size={20} />, label: "Results", active: pathname.startsWith("/admin/results") },
     { href: "/admin/design", icon: <LayoutTemplate size={20} />, label: "Design", active: pathname === "/admin/design" },
   ];
 

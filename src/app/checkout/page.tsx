@@ -189,7 +189,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-brand-cream/30">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8 md:py-16">
         <div className="flex flex-col lg:flex-row gap-16">
           
           <div className="flex-1 space-y-12">
@@ -215,7 +215,7 @@ export default function CheckoutPage() {
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-6 mb-8 overflow-hidden">
+                <div className="flex items-center gap-4 md:gap-6 mb-8 overflow-x-auto no-scrollbar pb-2">
                   <div className="flex items-center gap-3">
                     <span className={`w-8 h-8 flex items-center justify-center font-bold text-xs ${step >= 1 ? 'bg-brand-black text-white' : 'bg-zinc-200'}`}>01</span>
                     <span className="text-[10px] font-bold tracking-[0.3em] uppercase">Shipment</span>
@@ -228,7 +228,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {step === 1 ? (
-                  <form onSubmit={handleNext} className="bg-white p-8 md:p-12 shadow-sm border border-zinc-100 space-y-10">
+                  <form onSubmit={handleNext} className="bg-white p-5 md:p-12 shadow-sm border border-zinc-100 space-y-8 md:space-y-10">
                     <div className="space-y-6">
                       <h2 className="text-2xl font-heading italic">Shipping Destination</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -261,12 +261,12 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    <div className="pt-8 border-t border-zinc-100 flex justify-between items-center">
-                      <Link href="/products" className="text-[10px] font-bold tracking-[0.2em] text-zinc-400 hover:text-brand-black transition-colors flex items-center">
+                    <div className="pt-8 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <Link href="/products" className="text-[10px] font-bold tracking-[0.2em] text-zinc-400 hover:text-brand-black transition-colors flex items-center order-2 sm:order-1">
                         <ArrowLeft className="w-3 h-3 mr-2" />
                         BACK TO SHOP
                       </Link>
-                      <Button type="submit" size="lg" className="bg-brand-black text-white hover:bg-brand-gold px-10 h-14 rounded-none font-bold tracking-[0.2em] uppercase transition-all">
+                      <Button type="submit" size="lg" className="w-full sm:w-auto bg-brand-black text-white hover:bg-brand-gold px-10 h-14 rounded-none font-bold tracking-[0.2em] uppercase transition-all order-1 sm:order-2">
                         PROCEED TO REVIEW
                       </Button>
                     </div>
@@ -299,18 +299,18 @@ export default function CheckoutPage() {
                            <span className="text-[10px] font-bold">VISA • AMEX • PAYPAL</span>
                          </div>
                       </div>
-                      <div className="p-8 border-2 border-brand-black flex items-center gap-6 bg-zinc-50/50">
-                        <CreditCard className="w-10 h-10 text-brand-black" />
+                      <div className="p-4 md:p-8 border-2 border-brand-black flex items-center gap-4 md:gap-6 bg-zinc-50/50">
+                        <CreditCard className="w-8 h-8 md:w-10 md:h-10 text-brand-black shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-bold tracking-widest uppercase">Secure Professional Checkout</p>
-                          <p className="text-[11px] font-light text-zinc-500 italic mt-1">Processed securely via Razorpay Global Payments.</p>
+                          <p className="text-xs md:text-sm font-bold tracking-widest uppercase">Secure Checkout</p>
+                          <p className="text-[10px] md:text-[11px] font-light text-zinc-500 italic mt-1 leading-tight">Processed securely via Razorpay Global Payments.</p>
                         </div>
-                        <ShieldCheck className="text-brand-gold w-6 h-6" />
+                        <ShieldCheck className="text-brand-gold w-5 h-5 md:w-6 md:h-6 shrink-0" />
                       </div>
                     </div>
 
-                    <div className="pt-10 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-8">
-                      <button onClick={() => setStep(1)} className="text-[10px] font-bold tracking-[0.2em] text-zinc-400 hover:text-brand-black transition-colors flex items-center uppercase">
+                    <div className="pt-10 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <button onClick={() => setStep(1)} className="text-[10px] font-bold tracking-[0.2em] text-zinc-400 hover:text-brand-black transition-colors flex items-center uppercase order-2 sm:order-1">
                         <ArrowLeft className="w-3 h-3 mr-2" />
                         REVISE DETAILS
                       </button>
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
                         <Button 
                           onClick={initiatePayment}
                           size="lg" 
-                          className="bg-brand-black text-white hover:bg-brand-gold px-12 h-14 rounded-none font-bold tracking-[0.2em] uppercase transition-all shadow-xl shadow-brand-gold/10"
+                          className="w-full sm:w-auto bg-brand-black text-white hover:bg-brand-gold px-4 md:px-12 h-14 rounded-none font-bold tracking-[0.2em] uppercase transition-all shadow-xl shadow-brand-gold/10 order-1 sm:order-2 text-[8px] md:text-[10px]"
                         >
                           PROCEED TO SECURE PAYMENT
                         </Button>
@@ -339,9 +339,9 @@ export default function CheckoutPage() {
                   <CardTitle className="text-xs uppercase tracking-[0.3em] font-bold text-center">Your Selection</CardTitle>
                 </CardHeader>
                 <CardContent className="py-8 space-y-8">
-                  <div className="space-y-6 max-h-[500px] overflow-y-auto pr-4 no-scrollbar">
+                    <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
                     {items.map((item) => (
-                      <div key={item.product.id} className="flex gap-6 animate-in slide-in-from-bottom duration-300">
+                      <div key={item.product.id} className="flex gap-4 md:gap-6 animate-in slide-in-from-bottom duration-300">
                         <div className="relative w-20 h-24 bg-brand-cream/20 flex-shrink-0 group overflow-hidden">
                           <img src={item.product.imageUrls[0]} alt={item.product.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
                           <div className="absolute top-2 left-2 bg-brand-gold text-white text-[8px] font-bold px-2 py-0.5 tracking-widest uppercase">

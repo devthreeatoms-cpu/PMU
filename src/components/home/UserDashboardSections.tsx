@@ -25,9 +25,9 @@ export function LoggedInHeader({ name }: { name: string | null }) {
   return (
     <div className="bg-brand-rose text-brand-black py-12 border-b border-brand-gold/20">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left">
-            <h1 className="text-3xl md:text-5xl font-heading font-normal">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden">
+          <div className="space-y-2 text-center md:text-left max-w-full">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-heading font-normal break-words leading-tight">
               Hi, <span className="text-brand-gold">{name || "Artist"}</span>!
             </h1>
             <p className="text-zinc-600 font-light italic tracking-wide">
@@ -76,11 +76,11 @@ export function SimpleStatStrip() {
   ];
 
   return (
-    <div className="bg-white border-b border-zinc-100 py-6">
+    <div className="bg-white border-b border-zinc-100 py-6 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {stats.map((stat, idx) => (
-            <div key={idx} className="flex items-center gap-4 group cursor-pointer hover:bg-zinc-50 p-4 transition-colors border-r border-zinc-50 last:border-0">
+            <div key={idx} className="flex items-center gap-4 group cursor-pointer hover:bg-zinc-50 p-4 transition-colors md:border-r border-zinc-50 last:border-0">
               <div className="h-12 w-12 rounded-full bg-brand-gold/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                 {stat.icon}
               </div>
@@ -132,7 +132,7 @@ export function MemberHero() {
             style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1621244299838-23438be7410f?auto=format&fit=crop&q=80")' }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-cream via-brand-cream/80 to-transparent" />
-          <div className="relative z-10 h-full flex flex-col justify-center px-12 space-y-6 max-w-2xl">
+          <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-12 space-y-4 md:space-y-6 max-w-2xl">
             <span className="text-brand-gold text-[10px] font-bold tracking-[0.5em] uppercase">Private Member Offer</span>
             <h2 className="text-3xl md:text-5xl font-heading text-brand-black leading-tight">
               Exclusive 15% OFF <br/>on all <span className="text-brand-gold">Pigments</span>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -60,23 +60,6 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-brand-cream">
-      {/* Marquee Announcement Bar */}
-      {announcement && (
-        <div className="bg-brand-rose text-brand-black py-2 overflow-hidden border-b border-brand-gold/20">
-          <div className="animate-marquee whitespace-nowrap flex gap-10">
-            <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase opacity-90">
-              {announcement}
-            </span>
-            <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase opacity-90">
-              {announcement}
-            </span>
-            <span className="text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase opacity-90">
-              {announcement}
-            </span>
-          </div>
-        </div>
-      )}
-
       <Navbar />
       
       <LoggedInHeader name={userName} />
@@ -89,9 +72,9 @@ export default function HomePage() {
             <MemberHero />
           </div>
           
-          <div className="space-y-8">
+          <div className="space-y-8 overflow-hidden">
             {/* Artist Tray Sidebar */}
-            <div className="bg-white/40 rounded-[2.5rem] p-8 border border-brand-rose/20 shadow-sm">
+            <div className="bg-white/40 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 border border-brand-rose/20 shadow-sm overflow-hidden">
               <h3 className="text-xl font-heading mb-6">Your Artist Tray</h3>
               <div className="space-y-6">
                 <p className="text-zinc-500 text-sm font-light italic">Frequently ordered tools for your studio.</p>
@@ -131,7 +114,7 @@ export default function HomePage() {
             </div>
 
             {/* Loyalty Status */}
-            <div className="bg-brand-rose/30 rounded-[2.5rem] p-8 border border-brand-rose/50">
+            <div className="bg-brand-rose/30 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 border border-brand-rose/50 overflow-hidden">
               <h3 className="text-xl font-heading mb-4">PMU SUPPLY Rewards</h3>
               <p className="text-brand-black/70 text-sm font-light leading-relaxed mb-6">
                 You are <span className="font-bold">250 points</span> away from your next Artist Discount.

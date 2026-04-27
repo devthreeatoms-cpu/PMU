@@ -56,7 +56,22 @@ export async function POST(req: Request) {
             transaction.update(userRef, { hasOrderedBefore: true });
           }
 
-          // C. Finalize Order Status
+          // C. Increment Coupon Usage
+          if (orderData.couponCode) {
+            const couponSnapshot = await adminDb.collection("coupons")
+              .where("code", "==", orderData.couponCode.toUpperCase())
+              .limit(1)
+              .get();
+            
+            if (!couponSnapshot.empty) {
+              const couponRef = couponSnapshot.docs[0].ref;
+              transaction.update(couponRef, {
+                usageCount: FieldValue.increment(1)
+              });
+            }
+          }
+
+          // D. Finalize Order Status
           transaction.update(orderRef, {
             status: 'paid',
             razorpayPaymentId: razorpay_payment_id,

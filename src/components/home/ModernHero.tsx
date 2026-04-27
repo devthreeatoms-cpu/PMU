@@ -80,7 +80,7 @@ export function ModernHero() {
                   <span className="text-3xl md:text-5xl xl:text-7xl font-sans font-black tracking-[0.2em] uppercase leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-black to-zinc-400">
                     PRECISION
                   </span>
-                  <span className="text-7xl md:text-9xl xl:text-[11rem] font-heading font-normal italic tracking-tighter text-brand-gold leading-[0.7] mt-[-0.05em]">
+                  <span className="text-5xl sm:text-7xl md:text-9xl xl:text-[11rem] font-heading font-normal italic tracking-tighter text-brand-gold leading-[0.8] mt-[-0.05em]">
                     PMU
                   </span>
                 </h1>
@@ -88,8 +88,8 @@ export function ModernHero() {
 
               <div className="relative max-w-md">
                 <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-brand-gold/20" />
-                <p className="text-zinc-500 text-xs md:text-sm font-light italic tracking-wider leading-relaxed pl-8">
-                  "Enter the vault of <span className="text-zinc-900 font-bold uppercase tracking-widest text-[10px]">unlimited possibilities.</span> From revolutionary <span className="text-brand-gold font-bold">E95 Machines</span> to our signature <span className="text-brand-gold font-bold">Organic Pigments</span>—we supply everything an elite PMU artist needs."
+                <p className="text-zinc-500 text-[10px] md:text-sm font-light italic tracking-wider leading-relaxed pl-6 md:pl-8">
+                  "Enter the vault of <span className="text-zinc-900 font-bold uppercase tracking-widest text-[9px]">unlimited possibilities.</span> From revolutionary <span className="text-brand-gold font-bold">E95 Machines</span> to our signature <span className="text-brand-gold font-bold">Organic Pigments</span>—we supply everything an elite PMU artist needs."
                 </p>
               </div>
             </div>

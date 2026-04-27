@@ -107,6 +107,21 @@ export async function deleteBannerAction(id: string) {
   }
 }
 
+export async function reorderBannersAction(bannerIds: string[]) {
+  try {
+    const batch = adminDb.batch();
+    bannerIds.forEach((id, index) => {
+      const ref = adminDb.collection(BANNERS_COLLECTION).doc(id);
+      batch.update(ref, { order: index + 1 });
+    });
+    await batch.commit();
+    return { success: true };
+  } catch (err: any) {
+    console.error("reorderBannersAction error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 // Initial seeding function for the current banners
 export async function seedInitialBannersAction() {
   const initialBanners: Omit<Banner, 'id' | 'createdAt'>[] = [

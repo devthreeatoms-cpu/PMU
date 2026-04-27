@@ -22,7 +22,9 @@ import {
   ArrowDownRight,
   Clock,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,84 @@ export default function AdminDashboard() {
   const [hasProducts, setHasProducts] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [stockAlertPage, setStockAlertPage] = useState(1);
+  const [recentActivityPage, setRecentActivityPage] = useState(1);
+  const ITEMS_PER_PAGE = 3;
+
+  const paginatedStockAlerts = useMemo(() => {
+    if (!stats?.lowStockItems) return [];
+    const start = (stockAlertPage - 1) * ITEMS_PER_PAGE;
+    return stats.lowStockItems.slice(start, start + ITEMS_PER_PAGE);
+  }, [stats, stockAlertPage]);
+  const totalStockAlertPages = stats?.lowStockItems ? Math.ceil(stats.lowStockItems.length / ITEMS_PER_PAGE) : 0;
+
+  const paginatedRecentActivity = useMemo(() => {
+    if (!stats?.recentActivity) return [];
+    const start = (recentActivityPage - 1) * ITEMS_PER_PAGE;
+    return stats.recentActivity.slice(start, start + ITEMS_PER_PAGE);
+  }, [stats, recentActivityPage]);
+  const totalRecentActivityPages = stats?.recentActivity ? Math.ceil(stats.recentActivity.length / ITEMS_PER_PAGE) : 0;
+
+  const handleExportCSV = () => {
+    if (!stats) return;
+
+    let csvContent = "";
+    
+    // Summary Stats
+    csvContent += "Summary\n";
+    csvContent += `Total Revenue,${stats.totalRevenue}\n`;
+    csvContent += `Total Orders,${stats.totalOrders}\n`;
+    csvContent += `Active Users,${stats.activeUsers}\n`;
+    csvContent += `Total Users,${stats.totalUsers}\n\n`;
+
+    // Sales Data
+    if (stats.salesData && stats.salesData.length > 0) {
+      csvContent += "Sales Data\n";
+      csvContent += "Date,Revenue\n";
+      stats.salesData.forEach((row: any) => {
+        csvContent += `${row.date},${row.revenue}\n`;
+      });
+      csvContent += "\n";
+    }
+
+    // Low Stock
+    if (stats.lowStockItems && stats.lowStockItems.length > 0) {
+      csvContent += "Low Stock Items\n";
+      csvContent += "Name,SKU,Stock\n";
+      stats.lowStockItems.forEach((row: any) => {
+        // escape quotes in name
+        const safeName = row.name ? row.name.replace(/"/g, '""') : "";
+        csvContent += `"${safeName}",${row.sku},${row.stock}\n`;
+      });
+      csvContent += "\n";
+    }
+
+    // Recent Activity
+    if (stats.recentActivity && stats.recentActivity.length > 0) {
+      csvContent += "Recent Activity\n";
+      csvContent += "Type,Title,Details,Date\n";
+      stats.recentActivity.forEach((row: any) => {
+        const safeTitle = row.title ? row.title.replace(/"/g, '""') : "";
+        const safeDetails = row.subtitle ? row.subtitle.replace(/"/g, '""') : "";
+        csvContent += `${row.type},"${safeTitle}","${safeDetails}",${new Date(row.timestamp).toISOString()}\n`;
+      });
+      csvContent += "\n";
+    }
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `dashboard_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Dashboard data exported to CSV");
+  };
 
   useEffect(() => {
     const fetchData = async (silent = false) => {
@@ -111,7 +191,7 @@ export default function AdminDashboard() {
                {isInitializing ? "Seeding..." : "Bootstrap Products"}
              </Button>
           )}
-          <Button variant="outline" size="sm" className="rounded-full text-[10px] font-bold tracking-widest uppercase">Export CSV</Button>
+          <Button onClick={handleExportCSV} variant="outline" size="sm" className="rounded-full text-[10px] font-bold tracking-widest uppercase">Export CSV</Button>
           <Link href="/admin/orders">
             <Button size="sm" className="bg-zinc-900 hover:bg-black text-white rounded-full text-[10px] font-bold tracking-widest uppercase px-6">Live View</Button>
           </Link>
@@ -156,8 +236,8 @@ export default function AdminDashboard() {
 
       <div className="grid gap-6 lg:grid-cols-7">
         {/* Main Chart */}
-        <Card className="lg:col-span-4 border-zinc-200 shadow-sm rounded-[2.5rem] overflow-hidden bg-white">
-          <CardHeader className="p-8 pb-4">
+        <Card className="lg:col-span-4 border-zinc-200 shadow-sm rounded-[2.5rem] overflow-hidden bg-white h-fit">
+          <CardHeader className="p-6 pb-2">
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-800">Revenue Growth</CardTitle>
@@ -165,8 +245,8 @@ export default function AdminDashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-8 pt-0">
-            <div className="h-[300px] w-full mt-6">
+          <CardContent className="p-6 pt-0">
+            <div className="h-[200px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.salesData || []}>
                   <defs>
@@ -220,7 +300,7 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-4">
-              {stats?.lowStockItems?.length > 0 ? stats.lowStockItems.map((item: any) => (
+              {paginatedStockAlerts.length > 0 ? paginatedStockAlerts.map((item: any) => (
                 <div key={item.sku} className="flex items-center justify-between p-4 bg-white border border-red-50 rounded-2xl shadow-sm">
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-zinc-900">{item.name}</p>
@@ -236,6 +316,31 @@ export default function AdminDashboard() {
                    <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Inventory Levels Healthy</p>
                 </div>
               )}
+              {totalStockAlertPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStockAlertPage(p => Math.max(1, p - 1))}
+                    disabled={stockAlertPage === 1}
+                    className="h-8 px-2 text-[10px] font-bold tracking-widest uppercase hover:bg-zinc-100"
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" /> Prev
+                  </Button>
+                  <span className="text-[10px] text-zinc-400 font-bold">
+                    Page {stockAlertPage} of {totalStockAlertPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStockAlertPage(p => Math.min(totalStockAlertPages, p + 1))}
+                    disabled={stockAlertPage === totalStockAlertPages}
+                    className="h-8 px-2 text-[10px] font-bold tracking-widest uppercase hover:bg-zinc-100"
+                  >
+                    Next <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -245,7 +350,7 @@ export default function AdminDashboard() {
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-zinc-800">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent className="p-8 pt-0 space-y-4">
-              {stats?.recentActivity?.length > 0 ? stats.recentActivity.map((activity: any) => (
+              {paginatedRecentActivity.length > 0 ? paginatedRecentActivity.map((activity: any) => (
                 <div key={`${activity.type}-${activity.id}`} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 hover:border-brand-vibrant-pink/30 hover:bg-pink-50/30 transition-all group cursor-pointer">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-full bg-white flex items-center justify-center text-[10px] font-bold border border-zinc-200 uppercase ${activity.type === 'order' ? 'text-zinc-400' : 'text-brand-gold'}`}>
@@ -268,6 +373,31 @@ export default function AdminDashboard() {
                 </div>
               )) : (
                 <div className="py-8 text-center text-[10px] font-bold text-zinc-300 uppercase tracking-widest">No Recent Activity</div>
+              )}
+              {totalRecentActivityPages > 1 && (
+                <div className="flex items-center justify-between pt-2 border-b border-zinc-100 pb-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRecentActivityPage(p => Math.max(1, p - 1))}
+                    disabled={recentActivityPage === 1}
+                    className="h-8 px-2 text-[10px] font-bold tracking-widest uppercase hover:bg-zinc-100"
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" /> Prev
+                  </Button>
+                  <span className="text-[10px] text-zinc-400 font-bold">
+                    Page {recentActivityPage} of {totalRecentActivityPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRecentActivityPage(p => Math.min(totalRecentActivityPages, p + 1))}
+                    disabled={recentActivityPage === totalRecentActivityPages}
+                    className="h-8 px-2 text-[10px] font-bold tracking-widest uppercase hover:bg-zinc-100"
+                  >
+                    Next <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
               )}
               <Link href="/admin/orders" className="flex items-center justify-center gap-2 text-[10px] font-black text-zinc-400 hover:text-brand-black transition-colors pt-2 uppercase tracking-widest">
                  View All Merchant Activity <ExternalLink className="w-3 h-3" />

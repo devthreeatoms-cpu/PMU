@@ -15,7 +15,9 @@ import {
   UserPlus,
   ShieldAlert,
   Download,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { 
   Table, 
@@ -51,6 +53,9 @@ export default function AdminUsersPage() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [regForm, setRegForm] = useState({ email: "", displayName: "", role: "customer" });
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -146,6 +151,17 @@ export default function AdminUsersPage() {
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.uid?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const initials = (name: string) => name?.split(" ").map(n => n[0]).join("").toUpperCase() || "?";
 
@@ -265,13 +281,13 @@ export default function AdminUsersPage() {
             ) : filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="py-24 text-center">
-                  <p className="text-zinc-400 text-sm italic">
-                    {users.length === 0 ? "No users registered yet." : "No matching users found."}
-                  </p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredUsers.map((user) => (
+                    <p className="text-zinc-400 text-sm italic">
+                      {users.length === 0 ? "No users registered yet." : "No matching users found."}
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedUsers.map((user) => (
                 <TableRow key={user.uid} className="hover:bg-zinc-50/50 transition-colors group">
                   <TableCell className="px-8">
                     <div className="flex items-center gap-4">
@@ -367,6 +383,54 @@ export default function AdminUsersPage() {
             )}
           </TableBody>
         </Table>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex flex-col md:flex-row items-center justify-between px-8 py-6 bg-zinc-50/30 border-t border-zinc-100 gap-4">
+            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+              Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length} users
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="rounded-xl h-10 px-4 text-[10px] font-bold uppercase tracking-widest gap-2 border-zinc-200"
+              >
+                <ChevronLeft className="w-3 h-3" /> Previous
+              </Button>
+              
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-xl text-[10px] font-bold ${
+                      currentPage === page 
+                        ? 'bg-brand-gold text-white hover:bg-brand-gold/90 shadow-md shadow-brand-gold/20' 
+                        : 'text-zinc-400 hover:text-zinc-900 hover:bg-white'
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-xl h-10 px-4 text-[10px] font-bold uppercase tracking-widest gap-2 border-zinc-200"
+              >
+                Next <ChevronRight className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

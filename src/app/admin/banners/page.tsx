@@ -32,6 +32,7 @@ import {
   addBannerAction, 
   updateBannerAction, 
   deleteBannerAction, 
+  reorderBannersAction,
   type Banner 
 } from "./actions";
 import { useImageUpload } from "@/hooks/useImageUpload";
@@ -121,6 +122,35 @@ export default function AdminBannersPage() {
       loadBanners();
     } catch (error) {
       toast.error("Delete failed");
+    }
+  };
+  
+  const handleReorder = async (id: string, direction: 'up' | 'down') => {
+    const currentIndex = banners.findIndex(b => b.id === id);
+    if (currentIndex === -1) return;
+
+    const newBanners = [...banners];
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= banners.length) return;
+
+    // Swap
+    const temp = newBanners[currentIndex];
+    newBanners[currentIndex] = newBanners[targetIndex];
+    newBanners[targetIndex] = temp;
+
+    setBanners(newBanners);
+
+    const bannerIds = newBanners.map(b => b.id as string);
+    try {
+      const res = await reorderBannersAction(bannerIds);
+      if (!res.success) {
+         toast.error("Reorder failed");
+         loadBanners(); // revert
+      }
+    } catch (err) {
+      toast.error("Reorder failed");
+      loadBanners(); // revert
     }
   };
 
@@ -431,16 +461,32 @@ export default function AdminBannersPage() {
                   <p className="text-sm text-zinc-500 line-clamp-1 italic">{banner.description}</p>
                 </div>
 
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-2 transition-all">
                   <div className="flex flex-col gap-1 pr-4 border-r border-zinc-100">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-zinc-100"><ArrowUp className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-zinc-100"><ArrowDown className="w-4 h-4" /></Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 hover:bg-zinc-100 disabled:opacity-30"
+                      onClick={() => banner.id && handleReorder(banner.id, 'up')}
+                      disabled={banners.indexOf(banner) === 0}
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 hover:bg-zinc-100 disabled:opacity-30"
+                      onClick={() => banner.id && handleReorder(banner.id, 'down')}
+                      disabled={banners.indexOf(banner) === banners.length - 1}
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </Button>
                   </div>
                   <Button 
                     variant="outline" 
                     size="icon" 
                     onClick={() => { setCurrentBanner(banner); setIsEditing(true); }}
-                    className="h-12 w-12 rounded-xl border-zinc-200 hover:border-brand-gold hover:text-brand-gold transition-all"
+                    className="h-12 w-12 rounded-xl border-zinc-200 hover:border-brand-gold hover:text-brand-gold transition-all bg-white"
                   >
                     <Pencil className="w-5 h-5" />
                   </Button>
@@ -448,7 +494,7 @@ export default function AdminBannersPage() {
                     variant="outline" 
                     size="icon" 
                     onClick={() => banner.id && handleDelete(banner.id)}
-                    className="h-12 w-12 rounded-xl border-zinc-200 hover:border-red-500 hover:text-red-500 transition-all"
+                    className="h-12 w-12 rounded-xl border-zinc-200 hover:border-red-500 hover:text-red-500 transition-all bg-white"
                   >
                     <Trash2 className="w-5 h-5" />
                   </Button>

@@ -13,7 +13,9 @@ import {
   XCircle,
   Truck,
   RotateCcw,
-  Plus
+  Plus,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { 
   Table, 
@@ -67,7 +69,9 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("recent");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -154,6 +158,17 @@ export default function AdminOrdersPage() {
       order.shippingAddress?.email?.toLowerCase().includes(term)
     );
   }, [orders, searchTerm]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredOrders, currentPage]);
+
+  const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -277,7 +292,7 @@ export default function AdminOrdersPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => (
+                paginatedOrders.map((order) => (
                   <TableRow key={order.id} className="hover:bg-zinc-50/50 transition-colors group">
                     <TableCell className="px-8 font-mono text-[11px] font-bold text-zinc-400 group-hover:text-brand-gold transition-colors">
                       {order.id}
@@ -346,6 +361,54 @@ export default function AdminOrdersPage() {
             </TableBody>
           </Table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex flex-col md:flex-row items-center justify-between px-8 py-6 bg-zinc-50/30 border-t border-zinc-100 gap-4">
+            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+              Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredOrders.length)} of {filteredOrders.length} orders
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="rounded-xl h-10 px-4 text-[10px] font-bold uppercase tracking-widest gap-2 border-zinc-200"
+              >
+                <ChevronLeft className="w-3 h-3" /> Previous
+              </Button>
+              
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-xl text-[10px] font-bold ${
+                      currentPage === page 
+                        ? 'bg-brand-gold text-white hover:bg-brand-gold/90 shadow-md shadow-brand-gold/20' 
+                        : 'text-zinc-400 hover:text-zinc-900 hover:bg-white'
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-xl h-10 px-4 text-[10px] font-bold uppercase tracking-widest gap-2 border-zinc-200"
+              >
+                Next <ChevronRight className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

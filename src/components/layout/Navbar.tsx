@@ -77,8 +77,8 @@ export function Navbar() {
     <>
       <header className="relative w-full bg-white border-b">
         {announcement && (
-          <div className="bg-brand-rose text-brand-black py-2 border-b border-brand-gold/10 text-center px-4">
-            <span className="text-[10px] md:text-xs font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase block break-words whitespace-normal leading-relaxed">
+          <div className="bg-brand-rose text-brand-black py-1.5 md:py-2 border-b border-brand-gold/10 text-center px-4">
+            <span className="text-[9px] md:text-xs font-bold tracking-[0.15em] md:tracking-[0.3em] uppercase block break-words whitespace-normal leading-tight">
               {announcement}
             </span>
           </div>
@@ -99,7 +99,7 @@ export function Navbar() {
 
             {/* Logo - Centered for Premium Look */}
             <div className="flex-shrink-0 flex justify-center lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-              <Link href={user ? "/home" : "/"} className="font-heading font-bold text-xl md:text-4xl tracking-tighter text-brand-black uppercase">
+              <Link href={user ? "/home" : "/"} className="font-heading font-bold text-lg md:text-4xl tracking-tighter text-brand-black uppercase">
                 PMU<span className="text-brand-gold pl-1">SUPPLY</span>
               </Link>
             </div>

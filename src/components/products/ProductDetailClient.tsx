@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/store/useCartStore";
 import {
   ArrowLeft, Minus, Plus, ShieldCheck, Truck,
-  RotateCcw, Droplet, Zap, Target
+  RotateCcw, Droplet, Zap, Target,
+  ChevronLeft, ChevronRight 
 } from "lucide-react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -62,7 +63,7 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
   return (
     <div className="relative">
       {/* Back link */}
-      <div className="container mx-auto px-4 pt-12">
+      <div className="container mx-auto px-4 pt-8 md:pt-12">
         <Link
           href="/products"
           className="group inline-flex items-center gap-3 text-[10px] font-bold tracking-[0.4em] uppercase text-zinc-400 hover:text-brand-gold transition-all duration-500 mb-12"
@@ -72,7 +73,7 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
         </Link>
       </div>
 
-      <div className="container mx-auto px-4 pb-32">
+      <div className="container mx-auto px-4 pb-16 md:pb-32">
         <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-start">
 
           {/* Gallery Column */}
@@ -81,19 +82,46 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeImage}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4 }}
-                  className="absolute inset-0"
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.x > 50) {
+                      setActiveImage((prev) => (prev > 0 ? prev - 1 : product.imageUrls.length - 1));
+                    } else if (info.offset.x < -50) {
+                      setActiveImage((prev) => (prev < product.imageUrls.length - 1 ? prev + 1 : 0));
+                    }
+                  }}
+                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
                 >
                   <img
                     src={product.imageUrls[activeImage] || product.imageUrls[0]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover select-none"
                   />
                 </motion.div>
               </AnimatePresence>
+
+              {/* Navigation Arrows */}
+              {product.imageUrls.length > 1 && (
+                <>
+                  <button 
+                    onClick={() => setActiveImage((prev) => (prev > 0 ? prev - 1 : product.imageUrls.length - 1))}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-md flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:bg-white shadow-lg max-md:hidden"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-brand-black" />
+                  </button>
+                  <button 
+                    onClick={() => setActiveImage((prev) => (prev < product.imageUrls.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-md flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 hover:bg-white shadow-lg max-md:hidden"
+                  >
+                    <ChevronRight className="w-5 h-5 text-brand-black" />
+                  </button>
+                </>
+              )}
 
               {/* Carousel Dots */}
               {product.imageUrls.length > 1 && (
@@ -135,7 +163,7 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
             )}
 
             {/* Tech Bar */}
-            <div className="grid grid-cols-3 gap-2 md:gap-3 pt-6">
+            <div className="grid grid-cols-3 gap-1 md:gap-3 pt-6">
               <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
                 <Zap className="w-4 h-4 text-brand-gold" />
                 <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">High Precision</span>

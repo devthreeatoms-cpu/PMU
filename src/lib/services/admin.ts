@@ -14,9 +14,19 @@ import {
   updateDoc,
   increment,
   writeBatch,
-  getDoc
+  getDoc,
+  deleteDoc
 } from "firebase/firestore";
 import { Product, Order, Coupon, UserProfile, Referral, ShopAllSettings, ReferralSettings, PointTransaction } from "@/lib/types";
+
+export interface ResultItem {
+  id?: string;
+  url: string;
+  title: string;
+  order: number;
+  isActive: boolean;
+  createdAt: number;
+}
 
 // --- REFERRAL SYSTEM SETTINGS ---
 
@@ -178,6 +188,45 @@ export const getUserTransactions = async (userId: string): Promise<PointTransact
   const q = query(transactionsRef, orderBy("createdAt", "desc"), limit(50));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ ...doc.data() } as PointTransaction));
+};
+
+// --- RESULTS GALLERY SERVICE ---
+
+export const getResults = async (onlyActive = false): Promise<ResultItem[]> => {
+  const resultsRef = collection(db, "healedResults");
+  const q = onlyActive 
+    ? query(resultsRef, where("isActive", "==", true), orderBy("order", "asc"))
+    : query(resultsRef, orderBy("order", "asc"));
+    
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResultItem));
+};
+
+export const createResult = async (data: Omit<ResultItem, 'id' | 'createdAt'>) => {
+  return await addDoc(collection(db, "healedResults"), {
+    ...data,
+    createdAt: Date.now(),
+    isActive: true
+  });
+};
+
+export const updateResult = async (id: string, data: Partial<ResultItem>) => {
+  const resultRef = doc(db, "healedResults", id);
+  await updateDoc(resultRef, { ...data, updatedAt: Date.now() });
+};
+
+export const deleteResult = async (id: string) => {
+  const resultRef = doc(db, "healedResults", id);
+  await deleteDoc(resultRef);
+};
+
+export const reorderResults = async (resultIds: string[]) => {
+  const batch = writeBatch(db);
+  resultIds.forEach((id, index) => {
+    const ref = doc(db, "healedResults", id);
+    batch.update(ref, { order: index + 1 });
+  });
+  await batch.commit();
 };
 
 // --- REFERRAL AUDIT SERVICE ---

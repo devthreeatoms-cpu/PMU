@@ -22,10 +22,10 @@ export function CartDrawer() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="w-full sm:max-w-md flex flex-col bg-white border-l border-zinc-100 p-0">
-        <div className="flex flex-col h-full px-8 py-10">
+        <div className="flex flex-col h-full px-4 md:px-8 py-6 md:py-10">
           <SheetHeader className="pb-8 border-b border-zinc-50">
             <div className="flex justify-between items-center">
-              <SheetTitle className="text-3xl font-heading italic text-zinc-900">Your Selection</SheetTitle>
+              <SheetTitle className="text-2xl md:text-3xl font-heading italic text-zinc-900">Your Selection</SheetTitle>
               <span className="text-[10px] font-bold tracking-[0.3em] text-zinc-400 uppercase">{items.length} items</span>
             </div>
           </SheetHeader>
@@ -40,8 +40,8 @@ export function CartDrawer() {
               </div>
             ) : (
               items.map((item) => (
-                <div key={`${item.product.id}-${item.variantId}`} className="flex gap-6 border-b border-zinc-50 pb-8 last:border-0">
-                  <div className="relative w-24 h-28 bg-zinc-50 border border-zinc-100 overflow-hidden shrink-0 group">
+                <div key={`${item.product.id}-${item.variantId}`} className="flex gap-4 md:gap-6 border-b border-zinc-50 pb-6 md:pb-8 last:border-0">
+                  <div className="relative w-20 h-24 md:w-24 md:h-28 bg-zinc-50 border border-zinc-100 overflow-hidden shrink-0 group">
                     <div 
                       className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
                       style={{ backgroundImage: `url(${item.product.imageUrls[0]})` }}

@@ -80,7 +80,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-20 px-4 bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-start justify-center pt-10 md:pt-20 px-2 md:px-4 bg-brand-black/40 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
@@ -88,13 +88,13 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center gap-4 p-6 border-b border-zinc-50">
-          <Search className="h-6 w-6 text-brand-gold" />
+        <div className="flex items-center gap-2 md:gap-4 p-4 md:p-6 border-b border-zinc-50">
+          <Search className="h-5 w-5 md:h-6 md:h-6 text-brand-gold" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search for products, categories..."
-            className="flex-1 bg-transparent border-none outline-none text-xl font-medium placeholder:text-zinc-300 text-brand-black"
+            placeholder="Search products..."
+            className="flex-1 bg-transparent border-none outline-none text-base md:text-xl font-medium placeholder:text-zinc-300 text-brand-black"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -107,9 +107,9 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         </div>
 
         {/* Results Area */}
-        <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
+        <div className="max-h-[70vh] overflow-y-auto no-scrollbar">
           {query.trim().length <= 1 ? (
-            <div className="p-8 space-y-8">
+            <div className="p-5 md:p-8 space-y-6 md:space-y-8">
               <div>
                 <h3 className="text-[10px] font-black tracking-[0.3em] uppercase text-brand-gold mb-4">Trending Categories</h3>
                 <div className="flex flex-wrap gap-2">
