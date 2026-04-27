@@ -1,10 +1,29 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Users, DollarSign, BarChart3, Star, ArrowRight, Shield } from "lucide-react";
+import { DollarSign, BarChart3, Star, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Affiliate Program | PMU Supply",
+  description:
+    "Join the PMU Supply affiliate network and earn industry-leading commissions promoting professional PMU supplies. Real-time analytics, competitive rates, brand you can trust.",
+  openGraph: {
+    title: "Affiliate Program | PMU Supply",
+    description:
+      "Monetize your artistry by partnering with PMU Supply. Earn commissions while providing your community with elite PMU supplies.",
+    type: "website",
+    siteName: "PMU Supply",
+    images: [{ url: "/images/landing/collection-hero.png", width: 1200, height: 630, alt: "PMU Supply Affiliate Program" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Affiliate Program | PMU Supply",
+    description: "Join the PMU Supply affiliate network and earn competitive commissions.",
+    images: ["/images/landing/collection-hero.png"],
+  },
+};
 
 export default function AffiliatePage() {
   return (
@@ -67,7 +86,7 @@ export default function AffiliatePage() {
         </div>
       </section>
 
-      {/* How it Works - Editorial Design */}
+      {/* How it Works */}
       <section className="py-32 bg-brand-cream/50 overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-24 items-center">
@@ -103,7 +122,7 @@ export default function AffiliatePage() {
         </div>
       </section>
 
-      {/* Final Call to Action */}
+      {/* Final CTA */}
       <section className="py-24 bg-brand-cream text-center">
         <div className="container mx-auto px-4 max-w-3xl space-y-8">
            <div className="flex items-center justify-center gap-1 mb-4">
@@ -128,7 +147,7 @@ export default function AffiliatePage() {
   );
 }
 
-function BenefitCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+function BenefitCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="space-y-6 group">
       <div className="w-20 h-20 bg-white/40 rounded-[2rem] border border-brand-rose/20 flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-white transition-all duration-700 shadow-sm group-hover:shadow-2xl group-hover:shadow-brand-gold/20">
@@ -142,7 +161,7 @@ function BenefitCard({ icon, title, desc }: { icon: React.ReactNode, title: stri
   );
 }
 
-function StepItem({ number, title, desc }: { number: string, title: string, desc: string }) {
+function StepItem({ number, title, desc }: { number: string; title: string; desc: string }) {
   return (
     <div className="grid grid-cols-[auto_1fr] gap-8 items-start group">
       <span className="text-4xl font-heading text-zinc-100 group-hover:text-brand-gold transition-colors duration-500">{number}</span>

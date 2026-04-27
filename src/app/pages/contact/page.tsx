@@ -1,24 +1,35 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Send, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
+import { ContactForm } from "@/components/contact/ContactForm";
+
+export const metadata: Metadata = {
+  title: "Contact PMU Supply — Get in Touch",
+  description:
+    "Contact PMU Supply for product inquiries, shipping details, technical specifications, and support. Our concierge team is ready to assist your artistry.",
+  openGraph: {
+    title: "Contact PMU Supply",
+    description: "Get in touch with our team for product inquiries, shipping, and support.",
+    type: "website",
+    siteName: "PMU Supply",
+    images: [{ url: "/images/landing/collection-hero.png", width: 1200, height: 630, alt: "Contact PMU Supply" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact PMU Supply",
+    description: "Get in touch with our team for product inquiries, shipping, and support.",
+    images: ["/images/landing/collection-hero.png"],
+  },
+};
 
 export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
-
   return (
     <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
-      {/* Cinematic Header */}
+      {/* Cinematic Header — server rendered */}
       <section className="relative h-[40vh] min-h-[300px] flex items-center overflow-hidden bg-brand-rose">
         <div className="absolute inset-0 z-0">
           <div 
@@ -38,11 +49,12 @@ export default function ContactPage() {
         </div>
       </section>
 
+      {/* Content — server rendered static info + client form island */}
       <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-24 items-start">
             
-            {/* Contact Info */}
+            {/* Static Contact Info — server rendered */}
             <div className="space-y-16">
               <div className="space-y-8">
                 <div className="space-y-4">
@@ -73,7 +85,7 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* FAQ Preview Card */}
+              {/* FAQ Card — static */}
               <div className="p-10 bg-white/40 rounded-[3rem] border border-brand-rose/20 space-y-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/5 rounded-full blur-3xl group-hover:bg-brand-gold/10 transition-colors" />
                 <h4 className="font-heading italic text-2xl leading-tight">Frequently <br/>Requested <span className="text-brand-gold">Intel</span></h4>
@@ -86,39 +98,9 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Contact Form */}
+            {/* Contact Form — client island */}
             <div className="bg-white p-12 rounded-[4rem] border border-zinc-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] relative">
-              {submitted ? (
-                <div className="h-[500px] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-700">
-                  <div className="w-20 h-20 bg-brand-gold/10 rounded-full flex items-center justify-center text-brand-gold">
-                    <Send className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-heading italic">Transmission Received</h3>
-                    <p className="text-zinc-400 text-sm italic">Our concierge team will respond within 24 hours.</p>
-                  </div>
-                  <Button onClick={() => setSubmitted(false)} variant="link" className="text-brand-gold text-[10px] font-bold tracking-widest">SEND ANOTHER MESSAGE</Button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    <FormInput label="Full Name" placeholder="Artist Name" isRequired />
-                    <FormInput label="Email Address" placeholder="artist@example.com" type="email" isRequired />
-                  </div>
-                  <FormInput label="Subject" placeholder="Inquiry Type" />
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-400 ml-4">Message</label>
-                    <textarea 
-                      required
-                      placeholder="How can we assist your artistry?"
-                      className="w-full bg-zinc-50 border-none rounded-[2rem] p-6 focus:ring-2 focus:ring-brand-gold/20 min-h-[160px] text-zinc-600 outline-none transition-all placeholder:italic placeholder:text-zinc-300"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full h-16 bg-brand-rose text-white hover:bg-brand-gold rounded-full font-bold tracking-[0.4em] text-[10px] transition-all duration-700 shadow-2xl shadow-brand-gold/10">
-                    TRANSMIT INQUIRY
-                  </Button>
-                </form>
-              )}
+              <ContactForm />
             </div>
 
           </div>
@@ -130,7 +112,17 @@ export default function ContactPage() {
   );
 }
 
-function ContactItem({ icon, label, value, href }: { icon: React.ReactNode, label: string, value: string, href?: string }) {
+function ContactItem({
+  icon,
+  label,
+  value,
+  href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  href?: string;
+}) {
   const Card = () => (
     <div className="flex items-center gap-6 group">
       <div className="w-14 h-14 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-brand-gold group-hover:bg-brand-gold group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-xl group-hover:shadow-brand-gold/20">
@@ -147,19 +139,5 @@ function ContactItem({ icon, label, value, href }: { icon: React.ReactNode, labe
     <a href={href}><Card /></a>
   ) : (
     <Card />
-  );
-}
-
-function FormInput({ label, placeholder, type = "text", isRequired = false }: { label: string, placeholder: string, type?: string, isRequired?: boolean }) {
-  return (
-    <div className="space-y-3">
-      <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-400 ml-4">{label}</label>
-      <input 
-        required={isRequired}
-        type={type}
-        placeholder={placeholder}
-        className="w-full h-14 bg-zinc-50 border-none rounded-full px-6 focus:ring-2 focus:ring-brand-gold/20 text-zinc-600 outline-none transition-all placeholder:italic placeholder:text-zinc-300"
-      />
-    </div>
   );
 }

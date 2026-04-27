@@ -1,345 +1,136 @@
-"use client";
-
-import { use, useState, useEffect, useMemo } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
-import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/useCartStore";
-import { 
-  ArrowLeft, Minus, Plus, ShieldCheck, Truck, 
-  RotateCcw, Info, Droplet, Zap, Target 
-} from "lucide-react";
-import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { Product } from "@/lib/types";
-import { getProductById, getProducts } from "@/lib/services/admin";
 import { Footer } from "@/components/layout/Footer";
+import { getProductByIdServer, getAllProductsServer } from "@/lib/services/server";
+import { ProductDetailClient } from "@/components/products/ProductDetailClient";
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const unwrappedParams = use(params);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [recommended, setRecommended] = useState<Product[]>([]);
-  const [quantity, setQuantity] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
-  const [activeImage, setActiveImage] = useState(0);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
-  const addItem = useCartStore((state) => state.addItem);
-  const setIsOpen = useCartStore((state) => state.setIsOpen);
+// ─── Per-product metadata (title, description, OG) ──────────────────────────
 
-  useEffect(() => {
-    setMounted(true);
-    
-    const fetchData = async () => {
-      try {
-        const [targetProduct, allProducts] = await Promise.all([
-          getProductById(unwrappedParams.id),
-          getProducts()
-        ]);
-        
-          if (targetProduct) {
-            setProduct(targetProduct);
-            setActiveImage(0);
-            
-            // Initialize default options
-            if (targetProduct.hasVariants && targetProduct.options) {
-              const defaults: Record<string, string> = {};
-              targetProduct.options.forEach(opt => {
-                if (opt.values.length > 0) defaults[opt.name] = opt.values[0];
-              });
-              setSelectedOptions(defaults);
-            }
-
-            // Get 4 random products for recommendations, excluding current
-          const others = allProducts
-            .filter(p => p.id !== targetProduct.id)
-            .sort(() => 0.5 - Math.random())
-            .slice(0, 4);
-          setRecommended(others);
-        }
-      } catch (error) {
-        console.error("Discovery error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [unwrappedParams.id]);
-
-  const currentVariant = useMemo(() => {
-    if (!product || !product.hasVariants || !product.variants) return null;
-    
-    // If no options selected yet, but we have variants, we should still try to resolve one
-    const optionsToMatch = Object.keys(selectedOptions).length > 0 
-      ? selectedOptions 
-      : (product.options || []).reduce((acc, opt) => ({ ...acc, [opt.name]: opt.values[0] }), {});
-
-    return product.variants.find(v => 
-      Object.entries(optionsToMatch).every(([key, value]) => v.combination[key] === value)
-    );
-  }, [product, selectedOptions]);
-
-  const currentPrice = currentVariant ? currentVariant.price : (product?.price || 0);
-  const currentStock = currentVariant ? currentVariant.stock : (product?.stock || 0);
-  const isOutOfStock = currentStock <= 0;
-
-  const handleAddToCart = () => {
-    if (product) {
-      const variantName = currentVariant 
-        ? Object.values(currentVariant.combination).join(" / ")
-        : undefined;
-      addItem(product, quantity, currentVariant?.id, variantName);
-      setIsOpen(true);
-    }
-  };
-
-  if (!mounted) return null;
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
-        <Navbar />
-        <div className="animate-pulse flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full border-2 border-brand-gold border-t-transparent animate-spin mb-4" />
-            <p className="text-[10px] font-bold tracking-[0.5em] text-brand-gold uppercase">Authenticating Artistry...</p>
-        </div>
-      </div>
-    );
-  }
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductByIdServer(id);
 
   if (!product) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-6">
-        <Navbar />
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl font-heading italic">Product Archived</h2>
-          <p className="text-zinc-500 font-light italic">The requested equipment could not be located in our current supply line.</p>
-          <Link href="/products">
-            <Button variant="outline" className="border-brand-gold text-brand-gold mt-4">BACK TO SHOP ALL</Button>
-          </Link>
-        </div>
-      </div>
-    );
+    return {
+      title: "Product Not Found | PMU Supply",
+      description: "The requested PMU product could not be found.",
+    };
   }
+
+  const title = `${product.name} | PMU Supply`;
+  const description =
+    product.description ||
+    `Buy ${product.name} from PMU Supply — professional permanent makeup supplies.`;
+  const image = product.imageUrls?.[0] ?? "";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: image
+        ? [{ url: image, width: 800, height: 800, alt: product.name }]
+        : [],
+      type: "website",
+      siteName: "PMU Supply",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : [],
+    },
+  };
+}
+
+// ─── Pre-render all product pages at build time (ISR for new products) ───────
+
+export async function generateStaticParams() {
+  try {
+    const products = await getAllProductsServer();
+    return products.map((p) => ({ id: p.id }));
+  } catch {
+    return [];
+  }
+}
+
+// Enable ISR — revalidate product pages every 60 seconds
+export const revalidate = 60;
+
+// ─── Server Component Page ───────────────────────────────────────────────────
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  // Fetch product and recommended products in parallel on the server
+  const [product, allProducts] = await Promise.all([
+    getProductByIdServer(id),
+    getAllProductsServer(),
+  ]);
+
+  if (!product) {
+    notFound();
+  }
+
+  // Pick 4 random other products for the recommendation rail
+  const recommended = allProducts
+    .filter((p) => p.id !== product.id && p.isActive !== false)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 4);
+
+  // ── JSON-LD Structured Data for Google Rich Snippets ──────────────────────
+  const jsonLd = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    name: product.name,
+    description:
+      product.description ||
+      `Professional PMU product: ${product.name}`,
+    image: product.imageUrls ?? [],
+    brand: {
+      "@type": "Brand",
+      name: "PMU Supply",
+    },
+    offers: {
+      "@type": "Offer",
+      url: `https://www.pmusupply.com/products/${product.id}`,
+      priceCurrency: "INR",
+      price: product.salePrice && product.salePrice > 0 ? product.salePrice : product.price,
+      availability:
+        (product.stock ?? 0) > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      seller: {
+        "@type": "Organization",
+        name: "PMU Supply",
+      },
+    },
+  };
 
   return (
     <main className="min-h-screen bg-white">
+      {/* JSON-LD for Google rich product snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <Navbar />
 
-      <div className="relative">
-        {/* Cinematic Product Header */}
-        <div className="container mx-auto px-4 pt-12">
-          <Link href="/products" className="group inline-flex items-center gap-3 text-[10px] font-bold tracking-[0.4em] uppercase text-zinc-400 hover:text-brand-gold transition-all duration-500 mb-12">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Shop All
-          </Link>
-        </div>
+      {/* All interactive content (carousel, add-to-cart, variants) is a client island */}
+      <ProductDetailClient product={product} recommended={recommended} />
 
-        <div className="container mx-auto px-4 pb-32">
-          <div className="grid lg:grid-cols-2 gap-16 xl:gap-24 items-start">
-            
-            {/* Gallery Column */}
-            <div className="space-y-6 lg:sticky lg:top-32">
-              <div className="relative aspect-square md:max-h-[500px] bg-white border border-zinc-100 overflow-hidden group mx-auto">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeImage}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute inset-0"
-                  >
-                    <img 
-                      src={product.imageUrls[activeImage] || product.imageUrls[0]} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-                
-                {/* Carousel Controls */}
-                {product.imageUrls.length > 1 && (
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                    {product.imageUrls.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImage(idx)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                          activeImage === idx ? 'bg-brand-gold w-6' : 'bg-zinc-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Thumbnails */}
-              {product.imageUrls.length > 1 && (
-                <div className="flex gap-4 px-2 overflow-x-auto pb-2 scrollbar-hide">
-                  {product.imageUrls.map((url, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveImage(idx)}
-                      className={`relative w-24 h-24 shrink-0 overflow-hidden border transition-all duration-500 ${
-                        activeImage === idx ? 'border-brand-gold' : 'border-zinc-100 opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <img 
-                        src={url} 
-                        alt={`${product.name} ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Minimalist Tech Bar */}
-              <div className="grid grid-cols-3 gap-2 md:gap-3 pt-6">
-                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
-                   <Zap className="w-4 h-4 text-brand-gold" />
-                   <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">High Precision</span>
-                </div>
-                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
-                   <ShieldCheck className="w-4 h-4 text-brand-gold" />
-                   <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">Sterilized</span>
-                </div>
-                <div className="p-2 md:p-5 border border-zinc-100 bg-zinc-50/50 flex flex-col items-center gap-1 md:gap-2 text-center transition-colors hover:bg-zinc-50">
-                   <Droplet className="w-4 h-4 text-brand-gold" />
-                   <span className="text-[7px] font-bold tracking-[0.2em] uppercase text-zinc-400">Optimized Flow</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Information Column */}
-            <div className="space-y-10 lg:pl-10">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-zinc-400 text-[9px] font-bold tracking-[0.4em] uppercase">PMU SUPPLY</span>
-                  <div className="h-px w-6 bg-brand-gold/30" />
-                  <span className="text-brand-gold text-[9px] font-bold tracking-[0.4em] uppercase">{product.category}</span>
-                </div>
-                <h1 className="text-3xl md:text-5xl font-heading leading-tight text-zinc-900 break-words">
-                  {product.name}
-                </h1>
-                <div className="flex items-baseline gap-4 pt-2">
-                  <span className="text-2xl font-light text-zinc-900">₹{currentPrice.toFixed(2)}</span>
-                  {currentVariant && currentVariant.salePrice && (
-                    <span className="text-sm line-through text-zinc-400">₹{currentVariant.salePrice.toFixed(2)}</span>
-                  )}
-                  <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase opacity-60">
-                    {isOutOfStock ? "Out of Stock" : "Professional Distribution"}
-                  </span>
-                </div>
-                <div className="pt-2">
-                   <p className="text-[10px] text-zinc-500 font-light italic">
-                     Or 4 interest-free installments of ₹{(product.price / 4).toFixed(2)} with <span className="font-bold text-brand-gold">PMU Pay</span>
-                   </p>
-                </div>
-              </div>
-
-              <div className="prose prose-zinc max-w-none text-zinc-500 font-light leading-relaxed text-base italic border-l-2 border-brand-gold/10 pl-6">
-                <p>{product.description}</p>
-              </div>
-
-              {/* Multi-Dimensional Variant Switcher */}
-              {product.hasVariants && product.options && product.options.length > 0 && (
-                <div className="space-y-8">
-                  {product.options.map((option) => (
-                    <div key={option.id} className="space-y-4">
-                      <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-400">{option.name}</span>
-                      <div className="flex flex-wrap gap-3">
-                        {option.values.map((val) => (
-                          <button
-                            key={val}
-                            onClick={() => setSelectedOptions(prev => ({ ...prev, [option.name]: val }))}
-                            className={`px-6 py-3 border transition-all duration-500 text-[10px] font-bold tracking-widest uppercase ${
-                              selectedOptions[option.name] === val 
-                              ? 'bg-brand-black text-white shadow-xl scale-105' 
-                              : 'bg-white border-zinc-100 text-zinc-400 hover:border-brand-gold hover:text-brand-gold'
-                            }`}
-                          >
-                             {val}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Action Area */}
-              <div className="pt-4 md:pt-10 border-t border-zinc-100 space-y-4 md:space-y-8">
-                <div className="flex flex-row gap-2 md:gap-5">
-                  <div className="flex items-center bg-zinc-50 rounded-none px-2 md:px-5 h-10 md:h-14 border border-zinc-100 shrink-0">
-                    <button 
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="p-2 text-zinc-400 hover:text-brand-black transition-colors"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-10 text-center font-bold text-xs tracking-widest">{quantity}</span>
-                    <button 
-                      onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
-                      className="p-2 text-zinc-400 hover:text-brand-black transition-colors"
-                      disabled={isOutOfStock}
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                  
-                  <Button 
-                    onClick={handleAddToCart}
-                    disabled={isOutOfStock || (product.hasVariants && !currentVariant)}
-                    className="flex-1 h-10 md:h-14 bg-brand-black text-white hover:bg-brand-gold hover:text-white rounded-none font-bold tracking-[0.4em] text-[9px] md:text-[10px] transition-all duration-700 shadow-xl disabled:opacity-30 uppercase"
-                  >
-                    {isOutOfStock ? "Sold Out" : "Add to Cart"}
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-6 text-zinc-400 border-t border-zinc-50 pt-8">
-                  <div className="flex items-center gap-3">
-                    <Truck className="w-3.5 h-3.5 text-brand-gold" />
-                    <span className="text-[8px] font-bold tracking-widest uppercase text-zinc-900">Complimentary Dispatch</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <RotateCcw className="w-3.5 h-3.5 text-brand-gold" />
-                    <span className="text-[8px] font-bold tracking-widest uppercase text-zinc-900">Artist Guarantee</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Curation Rail */}
-        <section className="py-24 bg-white border-t border-zinc-100">
-          <div className="container mx-auto px-4">
-            <div className="mb-12">
-                <h2 className="text-3xl font-heading text-brand-black text-center mb-2 italic">You may also like</h2>
-                <div className="w-12 h-0.5 bg-brand-gold mx-auto" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {recommended.map((item) => (
-                <Link key={item.id} href={`/products/${item.id}`} className="group block space-y-4">
-                  <div className="relative aspect-square rounded-none overflow-hidden bg-zinc-50 border border-zinc-100 transition-all duration-700 group-hover:shadow-lg">
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-[3s] group-hover:scale-105"
-                      style={{ backgroundImage: `url("${item.imageUrls[0]}")` }}
-                    />
-                  </div>
-                  <div className="space-y-1 text-center">
-                    <h3 className="text-[9px] font-bold tracking-widest uppercase text-zinc-800 group-hover:text-brand-gold transition-colors">{item.name}</h3>
-                    <p className="text-zinc-500 font-light italic text-xs">₹{item.price.toFixed(2)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      </div>
+      <Footer />
     </main>
   );
 }

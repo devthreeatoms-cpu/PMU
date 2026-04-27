@@ -33,8 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// jsPDF and autoTable are loaded dynamically on demand — see generateInvoice()
 import { getOrderByIdAction, updateOrderStatusAction } from "../actions";
 import { Order } from "@/lib/types";
 import { toast } from "sonner";
@@ -85,8 +84,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const generateInvoice = () => {
+  const generateInvoice = async () => {
     if (!order) return;
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
     const doc = new jsPDF();
     
     // -- 1. Header Section --

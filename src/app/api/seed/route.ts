@@ -1,9 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // ── Security: Only allow seeding in development or with a secret token ──────
+  const isDev = process.env.NODE_ENV === "development";
+  const seedSecret = process.env.SEED_SECRET;
+  const providedToken = request.headers.get("x-seed-token");
+
+  if (!isDev) {
+    // In production, require a secret token
+    if (!seedSecret || providedToken !== seedSecret) {
+      return NextResponse.json(
+        { error: "Unauthorized. Provide a valid x-seed-token header." },
+        { status: 401 }
+      );
+    }
+  }
+
   try {
     const PRODUCTS = [
       { 
@@ -46,7 +61,7 @@ export async function GET() {
         price: 299.00, 
         salePrice: 249.00,
         category: "Machines & Power Supplies", 
-        imageUrls: ["https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=800"], // Accurate Machine Visual
+        imageUrls: ["https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=800"],
         description: "Freedom of movement with 8+ hours of battery life and ergonomic grip."
       },
       { 
@@ -60,7 +75,7 @@ export async function GET() {
         name: "Booms Butter Aftercare Balm", 
         price: 15.00, 
         category: "Aftercare", 
-        imageUrls: ["https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=800"], // Square Jar Graphic
+        imageUrls: ["https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=800"],
         description: "Soothing botanical butter for intensive healing after PMU procedures."
       },
       { 
@@ -74,7 +89,7 @@ export async function GET() {
         name: "Signature Practice Latex with Eyes", 
         price: 9.50, 
         category: "Practice Materials", 
-        imageUrls: ["https://images.unsplash.com/photo-1583241801142-113b9f5bbde5?auto=format&fit=crop&q=80&w=800"], // Square Practice Pad
+        imageUrls: ["https://images.unsplash.com/photo-1583241801142-113b9f5bbde5?auto=format&fit=crop&q=80&w=800"],
         description: "Realistic skin-like texture for practicing hairstroke patterns."
       },
       { 
@@ -95,13 +110,13 @@ export async function GET() {
 
     const batch = adminDb.batch();
     
-    // First, clear existing products for a clean seed
+    // Clear existing products
     const existingProducts = await adminDb.collection("products").get();
     existingProducts.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
-    // Add new aesthetic products
+    // Add new products
     PRODUCTS.forEach((p) => {
       const pRef = adminDb.collection("products").doc();
       batch.set(pRef, {

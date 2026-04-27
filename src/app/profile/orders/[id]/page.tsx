@@ -23,7 +23,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import jsPDF from "jspdf";
+
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any; label: string }> = {
   "pending":    { color: "bg-zinc-100 text-zinc-600 border-zinc-200",    icon: <Clock className="w-4 h-4" />, label: "Pending Verification" },
@@ -77,9 +77,11 @@ export default function OrderDetailsPage() {
     fetchData();
   }, [user, id, router]);
 
-  const generateInvoice = () => {
+  const generateInvoice = async () => {
     if (!order) return;
+    const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF();
+
     
     // Header
     doc.setFont("helvetica", "bold");

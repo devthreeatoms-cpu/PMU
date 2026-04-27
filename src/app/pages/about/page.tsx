@@ -1,8 +1,27 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Award, Heart, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About PMU Supply — Our Story & Mission",
+  description:
+    "Learn about PMU Supply's commitment to vegan, organic, cruelty-free permanent makeup products tested by professional artists. Clinical standards, artist-led quality.",
+  openGraph: {
+    title: "About PMU Supply — Our Story & Mission",
+    description:
+      "PMU Supply serves an international network of artists who demand more from their supplies. 100% vegan, organic, cruelty-free.",
+    type: "website",
+    siteName: "PMU Supply",
+    images: [{ url: "/images/landing/brow-class.png", width: 1200, height: 630, alt: "About PMU Supply" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About PMU Supply — Our Story & Mission",
+    description: "Vegan, organic, cruelty-free PMU products tested by professional artists.",
+    images: ["/images/landing/brow-class.png"],
+  },
+};
 
 export default function AboutPage() {
   return (
@@ -33,12 +52,12 @@ export default function AboutPage() {
             </h1>
           </div>
           <p className="text-zinc-500 text-xl font-light italic leading-relaxed max-w-2xl mx-auto">
-             "We strive to provide only the best quality products for PMU and skin care. Every item in the PMU SUPPLY catalog is born from a legacy of clinical excellence and artistic mastery."
+             &ldquo;We strive to provide only the best quality products for PMU and skin care. Every item in the PMU SUPPLY catalog is born from a legacy of clinical excellence and artistic mastery.&rdquo;
           </p>
         </div>
       </section>
 
-      {/* Core Values - Asymmetric Mosaic */}
+      {/* Core Values */}
       <section className="py-32">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-24 items-center">
@@ -72,7 +91,6 @@ export default function AboutPage() {
                  <img src="/images/landing/brow-class.png" alt="Mission Visual" className="w-full h-full object-cover transition-transform duration-[5s] group-hover:scale-110" />
                  <div className="absolute inset-0 bg-brand-gold/10 mix-blend-overlay" />
                </div>
-               {/* Floating Badges */}
                <div className="absolute -bottom-10 -left-10 p-8 bg-white rounded-[3rem] shadow-xl border border-zinc-50 space-y-2">
                  <Award className="w-8 h-8 text-brand-gold mb-2" />
                  <p className="text-[10px] font-bold tracking-widest uppercase">Awarded Excellence</p>
@@ -110,7 +128,7 @@ export default function AboutPage() {
   );
 }
 
-function PhilosophyItem({ title, desc, icon }: { title: string, desc: string, icon: React.ReactNode }) {
+function PhilosophyItem({ title, desc, icon }: { title: string; desc: string; icon: React.ReactNode }) {
   return (
     <div className="flex gap-6 items-start group">
       <div className="w-12 h-12 rounded-2xl bg-white/60 border border-brand-rose/20 flex items-center justify-center text-brand-gold group-hover:bg-brand-black group-hover:text-white transition-all duration-500">

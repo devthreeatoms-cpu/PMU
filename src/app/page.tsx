@@ -1,38 +1,62 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import type { Metadata } from "next";
+import React from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { CheckCircle2, Sparkles, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 import { ModernHero } from "@/components/home/ModernHero";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { ArtistSection } from "@/components/home/ArtistSection";
 import { GallerySection } from "@/components/home/GallerySection";
-import { useRouter } from "next/navigation";
-import { getCategoriesAction } from "@/app/admin/products/category-actions";
-import { getProducts } from "@/lib/services/admin";
+import { getAllProductsServer, getCategoriesServer, getBannersServer, ServerBanner, ServerCategory } from "@/lib/services/server";
 import { Product } from "@/lib/types";
-import { getBannersAction, seedInitialBannersAction, type Banner } from "@/app/admin/banners/actions";
 
-// Helper to slugify category names
-const slugify = (text: string) => {
-  return text.toLowerCase().replace(/[\s/&_-]+/g, '-').replace(/[^\w-]/g, '').replace(/^-+|-+$/g, '');
+// ─── Page-level metadata ─────────────────────────────────────────────────────
+
+export const metadata: Metadata = {
+  title: "PMU Supply — Elite Permanent Makeup Products",
+  description:
+    "Shop professional PMU needles, pigments, machines, and aftercare. All products are 100% vegan, organic, and cruelty-free — tested by professional artists.",
+  openGraph: {
+    title: "PMU Supply — Elite Permanent Makeup Products",
+    description:
+      "Shop professional PMU needles, pigments, machines, and aftercare. 100% vegan, organic, cruelty-free.",
+    type: "website",
+    siteName: "PMU Supply",
+    images: [{ url: "/images/landing/collection-hero.png", width: 1200, height: 630, alt: "PMU Supply" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PMU Supply — Elite Permanent Makeup Products",
+    description: "Professional PMU supplies — vegan, organic, cruelty-free.",
+    images: ["/images/landing/collection-hero.png"],
+  },
 };
+
+// Revalidate every 60 seconds (ISR)
+export const revalidate = 60;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[\s/&_-]+/g, "-")
+    .replace(/[^\w-]/g, "")
+    .replace(/^-+|-+$/g, "");
 
 const CATEGORY_IMAGE_MAP: Record<string, string> = {
   "Practice Materials": "/images/landing/practice-skins.png",
   "Machines & Power Supplies": "/images/landing/precision-machine.png",
-  "Machines": "/images/landing/precision-machine.png",
-  "Pigments": "/images/landing/collection-hero.png",
-  "Needles": "/images/landing/v3-cartridges.png",
+  Machines: "/images/landing/precision-machine.png",
+  Pigments: "/images/landing/collection-hero.png",
+  Needles: "/images/landing/v3-cartridges.png",
   "Q Vision Pigments": "/images/landing/q-vision.png",
   "Etalon Hybrid & Mineral": "/images/landing/etalon.png",
   "Anesthetic/Numbing": "/images/landing/numbing.png",
-  "Numbing": "/images/landing/numbing.png",
-  "Aftercare": "/images/landing/aftercare.png",
+  Numbing: "/images/landing/numbing.png",
+  Aftercare: "/images/landing/aftercare.png",
   "Shaping Tools": "/images/landing/shaping-tools.png",
 };
 
@@ -43,99 +67,71 @@ const FALLBACK_IMAGE_POOL = [
   "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&q=80",
 ];
 
-function DynamicCollectionsGrid() {
-  const [categories, setCategories] = useState<{id: string, name: string, count: number, image: string}[]>([]);
-  const [loading, setLoading] = useState(true);
+// ─── Sub-components (server-compatible, no client state) ─────────────────────
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [catRes, prodRes] = await Promise.all([
-          getCategoriesAction(),
-          getProducts()
-        ]);
-
-        if (catRes.success && catRes.categories) {
-          const categoryData = prodRes.reduce((acc: Record<string, {count: number, firstImage: string | null}>, p: Product) => {
-            const cat = typeof p.category === 'string' ? p.category : p.category;
-            if (!acc[cat]) acc[cat] = { count: 0, firstImage: p.imageUrls?.[0] || null };
-            acc[cat].count += 1;
-            return acc;
-          }, {});
-
-          const processed = catRes.categories
-            .filter(cat => cat.name.toLowerCase() !== 'other')
-            .map((cat, index) => {
-              const stats = categoryData[cat.name];
-              let displayImage = CATEGORY_IMAGE_MAP[cat.name];
-              if (!displayImage && stats?.firstImage) displayImage = stats.firstImage;
-              if (!displayImage) displayImage = FALLBACK_IMAGE_POOL[index % FALLBACK_IMAGE_POOL.length];
-              return { ...cat, count: stats?.count || 0, image: displayImage };
-            });
-          setCategories(processed);
-        }
-      } catch (error) {
-        console.error("Error loading dynamic collections:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="aspect-[4/5] bg-zinc-100 animate-pulse rounded-3xl" />
-        ))}
-      </div>
-    );
-  }
-
+function SectionDivider() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {categories.map((cat) => (
-        <CollectionCard 
-          key={cat.id}
-          title={cat.name === 'Machines & Power Supplies' ? 'Machines' : (cat.name === 'Anesthetic/Numbing' ? 'Numbing' : cat.name)} 
-          href={`/products?category=${slugify(cat.name)}`} 
-          image={cat.image}
-          count={`${cat.count} Products`}
-        />
-      ))}
+    <div className="container mx-auto px-4">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-gold/20 to-transparent" />
     </div>
   );
 }
 
-function DynamicBannerSection({ banner }: { banner: Banner }) {
-  const isRight = banner.imageSide === 'right';
-  const bgClass = banner.bgColor === 'white' ? 'bg-white' : 'bg-brand-cream/50';
-  
+function CollectionCard({ title, href, image, count }: { title: string; href: string; image: string; count: string }) {
+  return (
+    <Link href={href} className="group relative aspect-[4/5] overflow-hidden block rounded-3xl bg-zinc-100">
+      <img src={image} alt={title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110" />
+      <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+      <div className="absolute bottom-8 left-8 right-8 space-y-2">
+        <span className="text-brand-gold text-[10px] font-bold tracking-[0.3em] uppercase opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0">
+          Explore Collection
+        </span>
+        <h3 className="text-white text-2xl font-heading tracking-wide group-hover:text-brand-gold transition-colors">{title}</h3>
+        <p className="text-zinc-400 text-[10px] tracking-widest font-light uppercase">{count}</p>
+      </div>
+    </Link>
+  );
+}
+
+function ValueItem({ title, desc, icon }: { title: string; desc: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center text-center space-y-4 group">
+      <div className="w-16 h-16 rounded-full border border-zinc-100 flex items-center justify-center bg-white shadow-sm group-hover:border-brand-gold group-hover:shadow-[0_0_20px_rgba(248,184,200,0.1)] transition-all duration-500">
+        {icon}
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-[11px] font-bold tracking-[0.3em] uppercase text-brand-black">{title}</h3>
+        <p className="text-[9px] font-medium tracking-[0.1em] text-zinc-400 uppercase">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function DynamicBannerSection({ banner }: { banner: ServerBanner }) {
+  const isRight = banner.imageSide === "right";
+  const bgClass = banner.bgColor === "white" ? "bg-white" : "bg-brand-cream/50";
+
   return (
     <section className={`py-24 overflow-hidden ${bgClass}`}>
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className={`${isRight ? 'order-2 lg:order-1' : 'order-2'} space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
+          <div className={`${isRight ? "order-2 lg:order-1" : "order-2"} space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700`}>
             <div className="space-y-4">
               {banner.subtitle && (
                 <span className="text-brand-gold text-[10px] font-bold tracking-[0.4em] uppercase">{banner.subtitle}</span>
               )}
               <h2 className="text-4xl md:text-6xl font-heading leading-tight text-zinc-900">
-                {banner.title} <br/>
+                {banner.title} <br />
                 {banner.highlightedTitle && (
                   <span className="italic text-[#ff4d8d]">{banner.highlightedTitle}</span>
                 )}
               </h2>
             </div>
-            
+
             <div className="relative pl-8 border-l border-brand-gold/20">
-              <p className="text-zinc-600 text-lg leading-relaxed font-light italic">
-                {banner.description}
-              </p>
+              <p className="text-zinc-600 text-lg leading-relaxed font-light italic">{banner.description}</p>
             </div>
 
-            {/* Dynamic Badges */}
             {banner.badges && banner.badges.length > 0 && (
               <div className="flex flex-wrap gap-3 pt-2">
                 {banner.badges.map((badge, i) => (
@@ -146,7 +142,6 @@ function DynamicBannerSection({ banner }: { banner: Banner }) {
               </div>
             )}
 
-            {/* Dynamic Bullets */}
             {banner.bullets && banner.bullets.length > 0 && (
               <ul className="space-y-3 pt-2">
                 {banner.bullets.map((bullet, i) => (
@@ -165,16 +160,15 @@ function DynamicBannerSection({ banner }: { banner: Banner }) {
             </Link>
           </div>
 
-          <div className={`${isRight ? 'order-1 lg:order-2' : 'order-1'} relative animate-in fade-in zoom-in duration-1000`}>
-            <div className={`relative aspect-square w-full max-w-[500px] ${isRight ? 'ml-auto' : 'mr-auto'} rounded-[3rem] overflow-hidden shadow-2xl border-[12px] border-white`}>
-              <img 
-                src={banner.imageUrl} 
+          <div className={`${isRight ? "order-1 lg:order-2" : "order-1"} relative animate-in fade-in zoom-in duration-1000`}>
+            <div className={`relative aspect-square w-full max-w-[500px] ${isRight ? "ml-auto" : "mr-auto"} rounded-[3rem] overflow-hidden shadow-2xl border-[12px] border-white`}>
+              <img
+                src={banner.imageUrl}
                 alt={banner.title}
                 className="w-full h-full object-cover transition-transform duration-[2s] hover:scale-105"
               />
             </div>
-            {/* Subtle background decoration */}
-            <div className={`absolute -z-10 top-1/2 -translate-y-1/2 ${isRight ? '-right-20' : '-left-20'} w-80 h-80 bg-brand-gold/5 rounded-full blur-3xl`} />
+            <div className={`absolute -z-10 top-1/2 -translate-y-1/2 ${isRight ? "-right-20" : "-left-20"} w-80 h-80 bg-brand-gold/5 rounded-full blur-3xl`} />
           </div>
         </div>
       </div>
@@ -182,58 +176,50 @@ function DynamicBannerSection({ banner }: { banner: Banner }) {
   );
 }
 
-function SectionDivider() {
-  return (
-    <div className="container mx-auto px-4">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-gold/20 to-transparent" />
-    </div>
+// ─── Server Component Page ────────────────────────────────────────────────────
+
+export default async function Home() {
+  // Fetch all data on the server in parallel
+  const [allProducts, categories, banners] = await Promise.all([
+    getAllProductsServer(),
+    getCategoriesServer(),
+    getBannersServer(),
+  ]);
+
+  // Featured products: first 4 active products
+  const activeProducts = allProducts.filter((p) => p.isActive !== false);
+  const featuredProducts = activeProducts.slice(0, 4);
+
+  // Build category grid data
+  const categoryData = allProducts.reduce(
+    (acc: Record<string, { count: number; firstImage: string | null }>, p: Product) => {
+      const cat = p.category;
+      if (!acc[cat]) acc[cat] = { count: 0, firstImage: p.imageUrls?.[0] || null };
+      acc[cat].count += 1;
+      return acc;
+    },
+    {}
   );
-}
 
-export default function Home() {
-  const { user, isAdmin, loading: authLoading } = useAuth();
-  const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loadingBanners, setLoadingBanners] = useState(true);
-
-  useEffect(() => {
-    async function loadBanners() {
-      const res = await getBannersAction();
-      if (res.success && res.banners) {
-        if (res.banners.length === 0) {
-          await seedInitialBannersAction();
-          const retry = await getBannersAction();
-          if (retry.success && retry.banners) setBanners(retry.banners);
-        } else {
-          setBanners(res.banners);
-        }
-      }
-      setLoadingBanners(false);
-    }
-    loadBanners();
-  }, []);
-
-  if (authLoading || user || isRedirecting) {
-    return (
-      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-gold"></div>
-          <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-brand-gold animate-pulse">Authenticating Artistry</span>
-        </div>
-      </div>
-    );
-  }
+  const processedCategories = categories
+    .filter((cat) => cat.name.toLowerCase() !== "other")
+    .map((cat, index) => {
+      const stats = categoryData[cat.name];
+      let displayImage = CATEGORY_IMAGE_MAP[cat.name];
+      if (!displayImage && stats?.firstImage) displayImage = stats.firstImage;
+      if (!displayImage) displayImage = FALLBACK_IMAGE_POOL[index % FALLBACK_IMAGE_POOL.length];
+      return { ...cat, count: stats?.count || 0, image: displayImage };
+    });
 
   return (
     <main className="min-h-screen bg-brand-cream">
       <Navbar />
-      
+
       <ModernHero />
 
       <SectionDivider />
 
-      {/* Dynamic Featured Collections Section */}
+      {/* Featured Collections */}
       <section className="py-24 container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div className="space-y-2">
@@ -245,18 +231,34 @@ export default function Home() {
           </Link>
         </div>
 
-        <DynamicCollectionsGrid />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {processedCategories.map((cat) => (
+            <CollectionCard
+              key={cat.id}
+              title={
+                cat.name === "Machines & Power Supplies"
+                  ? "Machines"
+                  : cat.name === "Anesthetic/Numbing"
+                  ? "Numbing"
+                  : cat.name
+              }
+              href={`/products?category=${slugify(cat.name)}`}
+              image={cat.image}
+              count={`${cat.count} Products`}
+            />
+          ))}
+        </div>
       </section>
 
       <SectionDivider />
 
-      {/* RESTORED: Featured Products */}
-      <FeaturedProducts />
+      {/* Featured Products — server rendered */}
+      <FeaturedProducts products={featuredProducts} />
 
       <SectionDivider />
 
-      {/* Admin Controlled Dynamic Banners (First 2) */}
-      {!loadingBanners && banners.slice(0, 2).map((banner, index) => (
+      {/* Dynamic Banners (first 2) */}
+      {banners.slice(0, 2).map((banner, index) => (
         <React.Fragment key={banner.id}>
           <DynamicBannerSection banner={banner} />
           {index < 1 && <SectionDivider />}
@@ -265,20 +267,18 @@ export default function Home() {
 
       <SectionDivider />
 
-      {/* RESTORED: Gallery Section (Results) */}
       <GallerySection />
 
       <SectionDivider />
 
-      {/* Admin Controlled Dynamic Banners (Remaining) */}
-      {!loadingBanners && banners.slice(2).map((banner, index) => (
+      {/* Remaining banners */}
+      {banners.slice(2).map((banner) => (
         <React.Fragment key={banner.id}>
           <DynamicBannerSection banner={banner} />
           <SectionDivider />
         </React.Fragment>
       ))}
 
-      {/* RESTORED: Artist Section */}
       <ArtistSection />
 
       <SectionDivider />
@@ -298,37 +298,5 @@ export default function Home() {
 
       <Footer />
     </main>
-  );
-}
-
-function CollectionCard({ title, href, image, count }: { title: string, href: string, image: string, count: string }) {
-  return (
-    <Link href={href} className="group relative aspect-[4/5] overflow-hidden block rounded-3xl bg-zinc-100">
-      <img src={image} alt={title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110" />
-      <div className="absolute inset-0 bg-gradient-to-t from-brand-black/90 via-brand-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-      <div className="absolute bottom-8 left-8 right-8 space-y-2">
-        <span className="text-brand-gold text-[10px] font-bold tracking-[0.3em] uppercase opacity-0 group-hover:opacity-100 transition-all translate-y-4 group-hover:translate-y-0">
-          Explore Collection
-        </span>
-        <h3 className="text-white text-2xl font-heading tracking-wide group-hover:text-brand-gold transition-colors">
-          {title}
-        </h3>
-        <p className="text-zinc-400 text-[10px] tracking-widest font-light uppercase">{count}</p>
-      </div>
-    </Link>
-  );
-}
-
-function ValueItem({ title, desc, icon }: { title: string, desc: string, icon: React.ReactNode }) {
-  return (
-    <div className="flex flex-col items-center text-center space-y-4 group">
-      <div className="w-16 h-16 rounded-full border border-zinc-100 flex items-center justify-center bg-white shadow-sm group-hover:border-brand-gold group-hover:shadow-[0_0_20px_rgba(248,184,200,0.1)] transition-all duration-500">
-        {icon}
-      </div>
-      <div className="space-y-1">
-        <h3 className="text-[11px] font-bold tracking-[0.3em] uppercase text-brand-black">{title}</h3>
-        <p className="text-[9px] font-medium tracking-[0.1em] text-zinc-400 uppercase">{desc}</p>
-      </div>
-    </div>
   );
 }

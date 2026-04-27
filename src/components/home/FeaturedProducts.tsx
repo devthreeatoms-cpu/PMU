@@ -1,32 +1,12 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { getProducts } from "@/lib/services/admin";
-import { Product } from "@/lib/types";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Product } from "@/lib/types";
 
-export function FeaturedProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface FeaturedProductsProps {
+  products: Product[];
+}
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const all = await getProducts();
-        // Filter active products and take the first 4 for the featured section
-        const activeProducts = all.filter(p => p.isActive !== false);
-        setProducts(activeProducts.slice(0, 4));
-      } catch (error) {
-        console.error("Error loading featured products:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  if (loading) return null;
+export function FeaturedProducts({ products }: FeaturedProductsProps) {
+  if (!products || products.length === 0) return null;
 
   return (
     <section className="py-24 bg-brand-cream/30">
@@ -47,9 +27,9 @@ export function FeaturedProducts() {
           {products.map((product) => (
             <Link key={product.id} href={`/products/${product.id}`} className="group space-y-4">
               <div className="aspect-square rounded-[2rem] overflow-hidden bg-zinc-100 border border-zinc-100 relative">
-                <img 
-                  src={product.imageUrls?.[0] || "https://placehold.co/400x400?text=No+Image"} 
-                  alt={product.name} 
+                <img
+                  src={product.imageUrls?.[0] || "https://placehold.co/400x400?text=No+Image"}
+                  alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
                 />
               </div>
