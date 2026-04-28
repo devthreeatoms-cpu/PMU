@@ -27,12 +27,25 @@ export default function HomePage() {
     // Fetch coupon descriptions for the marquee
     getCouponsAction().then(res => {
       if (res.success && res.coupons) {
-        const descriptions = res.coupons
-          .filter((c: any) => c.isActive && c.description)
-          .map((c: any) => c.description.trim());
+        const now = Date.now();
+        const descriptions = Array.from(new Set(
+          res.coupons
+            .filter((c: any) => {
+              const expiryMs = c.expiryDate
+                ? typeof c.expiryDate === 'number'
+                  ? c.expiryDate
+                  : c.expiryDate.toMillis?.() ?? 0
+                : 0;
+              const isNotExpired = expiryMs === 0 || expiryMs > now;
+              return c.isActive && isNotExpired && c.description;
+            })
+            .map((c: any) => c.description.trim())
+        ));
         
         if (descriptions.length > 0) {
           setAnnouncement(descriptions.join(' • '));
+        } else {
+          setAnnouncement("");
         }
       }
     }).catch(() => {});

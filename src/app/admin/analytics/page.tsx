@@ -235,13 +235,22 @@ export default function AdminAnalyticsPage() {
               <p className="text-sm text-zinc-400 italic text-center py-8">No paid orders in this period.</p>
             ) : (
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie data={categoryRevenue} dataKey="revenue" nameKey="category" cx="50%" cy="50%" outerRadius={100} paddingAngle={3}
-                    label={({ name, percent }: { name?: string; percent?: number }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <Pie 
+                    data={categoryRevenue} 
+                    dataKey="revenue" 
+                    nameKey="category" 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={85} 
+                    paddingAngle={3}
+                    label={({ percent }: { percent?: number }) => `${((percent ?? 0) * 100).toFixed(0)}%`} 
+                    labelLine={false}
+                  >
                     {categoryRevenue.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(v: any) => [`₹${fmt(v)}`, "Revenue"]} contentStyle={{ borderRadius: 12, border: "1px solid #f4f4f5", fontSize: 12 }} />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10 }} />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}

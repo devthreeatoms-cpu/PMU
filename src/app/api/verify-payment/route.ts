@@ -40,13 +40,33 @@ export async function POST(req: Request) {
         
         // 3. Begin Transaction for Stock Deduction & Status Update
         await adminDb.runTransaction(async (transaction) => {
-          // A. Deduct Stock for each item
+          // A. Deduct Stock for each item (including variants)
           for (const item of items) {
             if (item.productId) {
               const productRef = adminDb.collection("products").doc(item.productId);
-              transaction.update(productRef, {
-                stock: FieldValue.increment(-(item.quantity || 1))
-              });
+              const productSnap = await transaction.get(productRef);
+              
+              if (productSnap.exists) {
+                const pData = productSnap.data()!;
+                let mainStock = Number(pData.stock || 0) - (item.quantity || 1);
+                let variants = pData.variants || [];
+
+                // If it's a variant purchase, deduct from that specific variant's stock
+                if (item.variantId && Array.isArray(variants)) {
+                  variants = variants.map((v: any) => {
+                    if (v.id === item.variantId) {
+                      return { ...v, stock: Math.max(0, Number(v.stock || 0) - (item.quantity || 1)) };
+                    }
+                    return v;
+                  });
+                }
+
+                transaction.update(productRef, {
+                  stock: Math.max(0, mainStock),
+                  variants: variants,
+                  updatedAt: Date.now()
+                });
+              }
             }
           }
 
