@@ -83,16 +83,39 @@ export default function CheckoutPage() {
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    
+
     try {
+      // ── Auto-apply coupon if user typed a code but didn't click Apply ──────
+      let resolvedCoupon = appliedCoupon;
+      if (!resolvedCoupon && couponCode.trim()) {
+        try {
+          const res = await fetch("/api/validate-coupon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: couponCode.trim(), cartTotal: subtotal, userId: user?.uid }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            resolvedCoupon = data.coupon;
+            setAppliedCoupon(data.coupon);
+            toast.success(`Coupon "${data.coupon.code}" applied!`);
+          } else {
+            // Typed code is invalid — warn but don't block checkout
+            toast.error(`Coupon "${couponCode}" is invalid and was not applied.`);
+          }
+        } catch {
+          // Non-blocking — proceed without coupon if validate-coupon fails
+        }
+      }
+
       const response = await fetch("/api/create-razorpay-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           items, 
           userId: user?.uid,
-          couponCode: appliedCoupon?.code ?? null,
-          couponId:   appliedCoupon?.id   ?? null,
+          couponCode: resolvedCoupon?.code ?? null,
+          couponId:   resolvedCoupon?.id   ?? null,
           shippingAddress: formData
         }),
       });
@@ -107,7 +130,7 @@ export default function CheckoutPage() {
         trackCheckoutStart(user?.uid ?? "guest", {
           itemCount: items.length,
           subtotal,
-          hasCoupon: !!appliedCoupon,
+          hasCoupon: !!resolvedCoupon,
         });
       } else {
         toast.error(data.error || "Unable to initialize secure payment. Please try again.");
@@ -118,6 +141,7 @@ export default function CheckoutPage() {
       setIsProcessing(false);
     }
   };
+
 
   const handlePaymentSuccess = () => {
     setStep(3);

@@ -47,46 +47,51 @@ export async function POST(req: Request) {
     // 2. Handle Coupon — use couponId (from validate-coupon) for direct lookup
     let couponDiscountAmount = 0;
     let couponId: string | null = null;
+    let resolvedCouponCode: string | null = null;
 
-    if (incomingCouponId) {
-      // Fast path: direct doc lookup using the already-verified coupon ID
-      const couponDoc = await adminDb.collection("coupons").doc(incomingCouponId).get();
+    const lookupId = incomingCouponId || null;
+    const lookupCode = couponCode ? (couponCode as string).toUpperCase().trim() : null;
+
+    if (lookupId) {
+      // Fast path: direct doc lookup by Firestore doc ID
+      const couponDoc = await adminDb.collection("coupons").doc(lookupId).get();
+      console.log("[coupon] doc exists:", couponDoc.exists, "id:", lookupId);
       if (couponDoc.exists) {
-        const couponData = couponDoc.data()!;
-        const expiryMs = couponData.expiryDate
-          ? typeof couponData.expiryDate === "number"
-            ? couponData.expiryDate
-            : couponData.expiryDate.toMillis?.() ?? 0
-          : 0;
-        if (couponData.isActive && (expiryMs === 0 || expiryMs > Date.now())) {
-          couponId = incomingCouponId;
-          couponDiscountAmount = couponData.type === "percentage"
-            ? subtotal * (couponData.value / 100)
-            : couponData.value;
-        }
-      }
-    } else if (couponCode) {
-      // Fallback: query by code for backward compatibility
-      const normalCode = (couponCode as string).toUpperCase().trim();
-      const couponSnapshot = await adminDb.collection("coupons")
-        .where("code", "==", normalCode)
-        .limit(1)
-        .get();
-      if (!couponSnapshot.empty) {
-        const couponData = couponSnapshot.docs[0].data();
-        const expiryMs = couponData.expiryDate
-          ? typeof couponData.expiryDate === "number"
-            ? couponData.expiryDate
-            : couponData.expiryDate.toMillis?.() ?? 0
-          : 0;
-        if (couponData.isActive && (expiryMs === 0 || expiryMs > Date.now())) {
-          couponId = couponSnapshot.docs[0].id;
-          couponDiscountAmount = couponData.type === "percentage"
-            ? subtotal * (couponData.value / 100)
-            : couponData.value;
+        const d = couponDoc.data()!;
+        const expiryMs = typeof d.expiryDate === "number" ? d.expiryDate
+          : d.expiryDate?.toMillis?.() ?? 0;
+        console.log("[coupon] isActive:", d.isActive, "expiryMs:", expiryMs, "now:", Date.now(), "type:", d.type, "value:", d.value);
+        if (d.isActive === true && (expiryMs === 0 || expiryMs > Date.now())) {
+          couponId = lookupId;
+          resolvedCouponCode = (d.code as string) ?? lookupCode;
+          couponDiscountAmount = d.type === "percentage"
+            ? subtotal * (d.value / 100)
+            : Number(d.value);
         }
       }
     }
+
+    if (!couponId && lookupCode) {
+      // Fallback: query by code
+      const snap = await adminDb.collection("coupons").where("code", "==", lookupCode).limit(1).get();
+      console.log("[coupon] fallback query results:", snap.size, "for code:", lookupCode);
+      if (!snap.empty) {
+        const d = snap.docs[0].data();
+        const expiryMs = typeof d.expiryDate === "number" ? d.expiryDate
+          : d.expiryDate?.toMillis?.() ?? 0;
+        console.log("[coupon] fallback isActive:", d.isActive, "expiryMs:", expiryMs, "type:", d.type, "value:", d.value);
+        if (d.isActive === true && (expiryMs === 0 || expiryMs > Date.now())) {
+          couponId = snap.docs[0].id;
+          resolvedCouponCode = (d.code as string) ?? lookupCode;
+          couponDiscountAmount = d.type === "percentage"
+            ? subtotal * (d.value / 100)
+            : Number(d.value);
+        }
+      }
+    }
+
+    console.log("[coupon] final: couponId=", couponId, "discount=", couponDiscountAmount);
+
 
     // 3. Shipping & Tax
     const finalSubtotal = Math.max(0, subtotal - couponDiscountAmount);
@@ -116,7 +121,7 @@ export async function POST(req: Request) {
       taxAmount: tax,
       total: total,
       couponId: couponId,
-      couponCode: couponCode ? couponCode.toUpperCase().trim() : null,
+      couponCode: resolvedCouponCode,
       status: 'pending',
       shippingAddress: shippingAddress,
       createdAt: Date.now(),
