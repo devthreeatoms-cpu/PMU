@@ -4,7 +4,7 @@ import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
   try {
-    const { items, userId, couponCode, shippingAddress } = await req.json();
+    const { items, userId, couponCode, couponId: incomingCouponId, shippingAddress } = await req.json();
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Empty cart" }, { status: 400 });
@@ -44,25 +44,46 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Handle Coupon
+    // 2. Handle Coupon — use couponId (from validate-coupon) for direct lookup
     let couponDiscountAmount = 0;
-    let couponId = null;
+    let couponId: string | null = null;
 
-    if (couponCode) {
+    if (incomingCouponId) {
+      // Fast path: direct doc lookup using the already-verified coupon ID
+      const couponDoc = await adminDb.collection("coupons").doc(incomingCouponId).get();
+      if (couponDoc.exists) {
+        const couponData = couponDoc.data()!;
+        const expiryMs = couponData.expiryDate
+          ? typeof couponData.expiryDate === "number"
+            ? couponData.expiryDate
+            : couponData.expiryDate.toMillis?.() ?? 0
+          : 0;
+        if (couponData.isActive && (expiryMs === 0 || expiryMs > Date.now())) {
+          couponId = incomingCouponId;
+          couponDiscountAmount = couponData.type === "percentage"
+            ? subtotal * (couponData.value / 100)
+            : couponData.value;
+        }
+      }
+    } else if (couponCode) {
+      // Fallback: query by code for backward compatibility
+      const normalCode = (couponCode as string).toUpperCase().trim();
       const couponSnapshot = await adminDb.collection("coupons")
-        .where("code", "==", couponCode.toUpperCase())
+        .where("code", "==", normalCode)
         .limit(1)
         .get();
-
       if (!couponSnapshot.empty) {
         const couponData = couponSnapshot.docs[0].data();
-        if (couponData.isActive && (!couponData.expiryDate || couponData.expiryDate > Date.now())) {
+        const expiryMs = couponData.expiryDate
+          ? typeof couponData.expiryDate === "number"
+            ? couponData.expiryDate
+            : couponData.expiryDate.toMillis?.() ?? 0
+          : 0;
+        if (couponData.isActive && (expiryMs === 0 || expiryMs > Date.now())) {
           couponId = couponSnapshot.docs[0].id;
-          if (couponData.type === 'percentage') {
-            couponDiscountAmount = subtotal * (couponData.value / 100);
-          } else if (couponData.type === 'flat') {
-            couponDiscountAmount = couponData.value;
-          }
+          couponDiscountAmount = couponData.type === "percentage"
+            ? subtotal * (couponData.value / 100)
+            : couponData.value;
         }
       }
     }

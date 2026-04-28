@@ -91,7 +91,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({ 
           items, 
           userId: user?.uid,
-          couponCode: appliedCoupon?.code,
+          couponCode: appliedCoupon?.code ?? null,
+          couponId:   appliedCoupon?.id   ?? null,
           shippingAddress: formData
         }),
       });
