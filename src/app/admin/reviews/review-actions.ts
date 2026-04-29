@@ -121,10 +121,7 @@ export async function checkProductPurchaseAction(userId: string, productId: stri
 
 export async function replyToReviewAction(reviewId: string, reply: string) {
   try {
-    const { db } = await import("@/lib/firebase");
-    const { doc, updateDoc } = await import("firebase/firestore");
-    
-    await updateDoc(doc(db, "reviews", reviewId), {
+    await adminDb.collection("reviews").doc(reviewId).update({
       adminReply: reply,
       adminReplyAt: Date.now()
     });
@@ -136,12 +133,9 @@ export async function replyToReviewAction(reviewId: string, reply: string) {
 
 export async function markReviewHelpfulAction(reviewId: string) {
   try {
-    const { db } = await import("@/lib/firebase");
-    const { doc, updateDoc, getDoc, increment } = await import("firebase/firestore");
-    
-    const reviewRef = doc(db, "reviews", reviewId);
-    await updateDoc(reviewRef, {
-      helpfulCount: increment(1)
+    const admin = await import("firebase-admin");
+    await adminDb.collection("reviews").doc(reviewId).update({
+      helpfulCount: admin.firestore.FieldValue.increment(1)
     });
     return { success: true };
   } catch (err: any) {

@@ -89,7 +89,7 @@ export default function AdminReviewsPage() {
       setIsReplyDialogOpen(false);
       fetchReviews();
     } else {
-      toast.error("Failed to post reply");
+      toast.error(result.error || "Failed to post reply");
     }
     setIsReplying(false);
   };
@@ -407,9 +407,13 @@ export default function AdminReviewsPage() {
                               placeholder="Write response..."
                             />
                           </div>
-                          <DialogFooter>
-                            <Button onClick={handleReply} disabled={isReplying}>
-                              {isReplying ? "Posting..." : "Send Reply"}
+                          <DialogFooter className="pt-4 border-t border-zinc-100">
+                            <Button 
+                              onClick={handleReply} 
+                              disabled={isReplying}
+                              className="w-full h-12 bg-[#FF4D6D] hover:opacity-90 text-white rounded-xl font-bold tracking-[0.2em] text-[10px] uppercase shadow-lg shadow-pink-500/10"
+                            >
+                              {isReplying ? "Posting..." : <span className="flex items-center gap-2">Send Official Reply <Send size={12} /></span>}
                             </Button>
                           </DialogFooter>
                         </DialogContent>

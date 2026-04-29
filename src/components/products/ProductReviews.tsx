@@ -320,7 +320,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
             <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-400">Verified Reviews ({reviews.length})</h4>
           </div>
           
-          <div className="space-y-10 max-h-[320px] overflow-y-auto pr-4 scrollbar-hide">
+          <div className="space-y-10 max-h-[500px] overflow-y-auto pr-4 scrollbar-hide">
             <AnimatePresence>
               {reviews.length === 0 ? (
                 <p className="text-zinc-400 text-xs italic">No reviews yet. Be the first to share your experience!</p>
@@ -391,7 +391,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                               }`}
                             >
                               <ThumbsUp size={12} className={helpfulClicked[review.id!] ? "fill-emerald-600" : ""} />
-                              Helpful {review.helpfulCount ? `(${review.helpfulCount + (helpfulClicked[review.id!] ? 1 : 0)})` : ""}
+                              Helpful ({ (review.helpfulCount || 0) + (helpfulClicked[review.id!] ? 1 : 0) })
                             </button>
                           </div>
 
