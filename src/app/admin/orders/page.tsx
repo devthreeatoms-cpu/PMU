@@ -15,7 +15,10 @@ import {
   RotateCcw,
   Plus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  Trash2,
+  Pencil
 } from "lucide-react";
 import { 
   Table, 

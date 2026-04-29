@@ -200,6 +200,7 @@ export interface PointTransaction {
   type: 'earn' | 'redeem' | 'refund';
   reason: string;
   orderId?: string;
+  adminId?: string;
   createdAt: number;
 }
 

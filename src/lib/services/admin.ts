@@ -17,7 +17,7 @@ import {
   getDoc,
   deleteDoc
 } from "firebase/firestore";
-import { Product, Order, Coupon, UserProfile, Referral, ShopAllSettings, ReferralSettings, PointTransaction } from "@/lib/types";
+import { Product, Order, Coupon, UserProfile, Referral, ShopAllSettings, ReferralSettings, PointTransaction, SocialLinks } from "@/lib/types";
 
 export interface ResultItem {
   id?: string;
@@ -185,6 +185,7 @@ export const adjustUserPoints = async (userId: string, pointsDelta: number, reas
 
   const transaction: PointTransaction = {
     id: transactionRef.id,
+    userId,
     amount: pointsDelta,
     type: pointsDelta > 0 ? 'earn' : 'redeem',
     reason,

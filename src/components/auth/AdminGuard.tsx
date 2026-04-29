@@ -25,8 +25,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       }
 
       // Module-level check for Staff
-      const role = profile?.role as string;
-      if (role === 'staff' && !profile?.isSuperAdmin) {
+      if (profile && profile.role === 'staff' && !profile.isSuperAdmin) {
         const pathParts = pathname.split('/');
         // admin/products -> module is products
         const moduleName = pathParts[2] || 'dashboard'; // Default to dashboard if root admin path
