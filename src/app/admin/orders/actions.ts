@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { Order } from "@/lib/types";
-import { sendOrderStatusUpdateEmail } from "@/lib/email";
+import { sendOrderStatusUpdateEmail, sendRefundConfirmationEmail } from "@/lib/email";
 import { FieldValue } from "firebase-admin/firestore";
 
 
@@ -47,7 +47,12 @@ export async function updateOrderStatusAction(id: string, status: Order["status"
     const orderSnap = await orderRef.get();
     if (orderSnap.exists) {
       const orderData = orderSnap.data();
-      await sendOrderStatusUpdateEmail({ id, ...orderData, status });
+      
+      if (status === 'refunded') {
+        await sendRefundConfirmationEmail({ id, ...orderData }, orderData?.total || 0);
+      } else {
+        await sendOrderStatusUpdateEmail({ id, ...orderData, status });
+      }
     }
 
     return { success: true };

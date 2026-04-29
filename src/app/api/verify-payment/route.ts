@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendInvoiceEmail } from "@/lib/email";
+import { createAdminNotification } from "@/lib/notifications";
 
 
 export async function POST(req: Request) {
@@ -104,17 +105,35 @@ export async function POST(req: Request) {
           });
         });
 
-        // 4. Send Confirmation Email (Async, non-blocking for response)
+        // Create admin notification
+        await createAdminNotification({
+          type: "order",
+          title: "New Order Booked",
+          message: `Order #${razorpay_order_id} has been paid successfully. Total: ₹${orderData.total}`,
+          link: `/admin/orders`
+        });
+
+        // 4. Send Confirmation Emails (Async, non-blocking for response)
         try {
-          await sendOrderConfirmationEmail({
+          const emailData = {
             id: razorpay_order_id,
             total: orderData.total,
             items: orderData.items,
-            shippingAddress: orderData.shippingAddress
-          });
+            shippingAddress: orderData.shippingAddress,
+            razorpayPaymentId: razorpay_payment_id,
+            paymentVerifiedAt: Date.now()
+          };
+
+          // Send Order Confirmation
+          await sendOrderConfirmationEmail(emailData);
+          
+          // Send Official Invoice
+          await sendInvoiceEmail(emailData);
+          
         } catch (emailErr) {
-          console.error("Failed to send order email:", emailErr);
+          console.error("Failed to send order/invoice emails:", emailErr);
         }
+
       }
 
       return NextResponse.json({ verified: true });

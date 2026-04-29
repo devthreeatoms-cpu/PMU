@@ -12,6 +12,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { UserProfile, CartItem } from "@/lib/types";
 import { useCartStore } from "@/store/useCartStore";
+import { onUserRegisteredAction } from "@/app/register/actions";
 
 interface AuthContextType {
   user: User | null;
@@ -75,6 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               
               try {
                 await setDoc(userRef, newProfile);
+                
+                // Trigger Welcome Email for new users
+                try {
+                  await onUserRegisteredAction(newProfile.email, newProfile.displayName);
+                } catch (e) {
+                  console.error("Welcome email failed", e);
+                }
+                
                 // The listener will pick this up and setProfile
               } catch (createError: any) {
                 console.warn("Profile creation pending...");

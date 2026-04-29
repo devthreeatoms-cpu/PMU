@@ -13,6 +13,7 @@ import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { onUserRegisteredAction } from "./actions";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -43,6 +44,13 @@ export default function RegisterPage() {
         });
       } catch (fsError: any) {
         console.error("Firestore Registry Error:", fsError.message);
+      }
+
+      // Trigger Welcome Email
+      try {
+        await onUserRegisteredAction(email, name);
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
       }
 
       toast.success("Account created successfully! Please sign in to continue.");

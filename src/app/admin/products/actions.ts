@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { sendNewProductLaunchEmail } from "@/lib/marketing-emails";
 
 export async function createProductAction(data: any) {
   try {
@@ -38,6 +39,26 @@ export async function createProductAction(data: any) {
     };
 
     const docRef = await adminDb.collection("products").add(docData);
+
+    // Trigger Product Launch Email to all users
+    try {
+      const usersSnapshot = await adminDb.collection("users").get();
+      const userEmails = usersSnapshot.docs
+        .map(doc => doc.data().email)
+        .filter(email => email && typeof email === 'string');
+
+      if (userEmails.length > 0) {
+        await sendNewProductLaunchEmail(userEmails, {
+          id: docRef.id,
+          name: docData.name,
+          description: docData.description,
+          image: docData.imageUrls[0] || null
+        });
+      }
+    } catch (emailErr) {
+      console.error("Failed to send launch emails:", emailErr);
+    }
+
     return { success: true, id: docRef.id };
   } catch (err: any) {
     console.error("Server Action Error (createProduct):", err);

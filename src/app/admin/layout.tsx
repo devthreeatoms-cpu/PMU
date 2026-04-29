@@ -18,13 +18,14 @@ import {
   Grid3X3,
   BarChart2,
   MessageSquare,
-  Bell
+  Bell,
+  Mail
 } from "lucide-react";
 import { AdminGuard } from "@/components/auth/AdminGuard";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { ReviewNotification } from "@/components/admin/ReviewNotification";
+import { AdminNotifications } from "@/components/admin/AdminNotifications";
 
 export default function AdminLayout({
   children,
@@ -62,6 +63,7 @@ export default function AdminLayout({
     { href: "/admin/coupons", icon: <Ticket size={20} />, label: "Coupons", active: pathname === "/admin/coupons" },
     { href: "/admin/users", icon: <Users size={20} />, label: "Users", active: pathname === "/admin/users" },
     { href: "/admin/reviews", icon: <MessageSquare size={20} />, label: "Reviews", active: pathname.startsWith("/admin/reviews") },
+    { href: "/admin/campaigns", icon: <Mail size={20} />, label: "Campaigns", active: pathname.startsWith("/admin/campaigns") },
     { href: "/admin/design", icon: <LayoutTemplate size={20} />, label: "Design", active: pathname === "/admin/design" },
   ].filter(item => {
     // Super Admins see everything
@@ -165,7 +167,7 @@ export default function AdminLayout({
             </div>
             
             <div className="flex items-center gap-3">
-              <ReviewNotification />
+              <AdminNotifications />
               <div className="hidden md:flex flex-col items-end mr-2">
                 <span className="text-[10px] font-bold text-zinc-900 leading-none">{adminName}</span>
                 <span className="text-[8px] font-bold text-brand-gold uppercase tracking-widest mt-1">

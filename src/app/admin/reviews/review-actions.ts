@@ -2,6 +2,7 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { Review } from "@/lib/types";
+import { createAdminNotification } from "@/lib/notifications";
 
 export async function submitReviewAction(data: Partial<Review>) {
   try {
@@ -12,6 +13,15 @@ export async function submitReviewAction(data: Partial<Review>) {
       createdAt: Date.now(),
     };
     await adminDb.collection("reviews").add(reviewData);
+
+    // Create admin notification
+    await createAdminNotification({
+      type: "review",
+      title: "New Product Review",
+      message: `${reviewData.userName} left a ${reviewData.rating}-star review for ${reviewData.productName || 'a product'}.`,
+      link: "/admin/reviews"
+    });
+
     return { success: true };
   } catch (err: any) {
     console.error("submitReviewAction error:", err);
