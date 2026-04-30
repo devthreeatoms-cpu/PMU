@@ -155,7 +155,6 @@ export function Navbar() {
               </Link>
             ))}
             <Link href="/pages/contact" className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase">Contact</Link>
-            <Link href="/pages/disclaimer" className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase">Disclaimer</Link>
           </nav>
         </div>
       </header>
@@ -191,7 +190,6 @@ export function Navbar() {
             </div>
             <div className="space-y-8 pt-8 border-t border-brand-gold/10">
               <Link onClick={() => setMobileMenuOpen(false)} href="/pages/contact" className="block text-lg font-bold tracking-[0.2em] uppercase text-brand-gold hover:text-brand-black transition-colors">Contact Us</Link>
-              <Link onClick={() => setMobileMenuOpen(false)} href="/pages/disclaimer" className="block text-lg font-bold tracking-[0.2em] uppercase text-brand-gold hover:text-brand-black transition-colors">Product Disclaimer</Link>
             </div>
           </div>
         </div>

@@ -210,6 +210,11 @@ export interface SocialLinks {
   facebook?: string;
   whatsapp?: string;
   youtube?: string;
+  showSocialLinks?: boolean;
+  showInstagram?: boolean;
+  showFacebook?: boolean;
+  showWhatsapp?: boolean;
+  showYoutube?: boolean;
 }
 
 export interface Review {

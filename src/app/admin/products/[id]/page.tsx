@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ProductCategory, Product } from "@/lib/types";
-import { getProductAction, updateProductAction } from "../actions";
+import { getProductAction, updateProductAction, getFeaturedCountAction } from "../actions";
 import VariantManager from "../VariantManager";
 import { ProductOption, ProductVariant } from "@/lib/types";
 
@@ -42,6 +42,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     category: "",
     stock: "0",
     isActive: true,
+    isFeatured: false,
   });
   
   const [hasVariants, setHasVariants] = useState(false);
@@ -52,15 +53,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [featuredCount, setFeaturedCount] = useState(0);
+  const [initialIsFeatured, setInitialIsFeatured] = useState(false);
+
   useEffect(() => {
-    async function loadCategories() {
-      const res = await getCategoriesAction();
-      if (res.success && res.categories) {
-        setCategories(res.categories);
-      }
+    async function loadData() {
+      const [catRes, featRes] = await Promise.all([
+        getCategoriesAction(),
+        getFeaturedCountAction()
+      ]);
+      if (catRes.success && catRes.categories) setCategories(catRes.categories);
+      if (featRes.success) setFeaturedCount(featRes.count || 0);
       setIsLoadingCategories(false);
     }
-    loadCategories();
+    loadData();
   }, []);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,10 +85,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             category: p.category,
             stock: p.stock.toString(),
             isActive: p.isActive !== false,
+            isFeatured: p.isFeatured || false,
           });
           setHasVariants(p.hasVariants || false);
           setOptions(p.options || []);
           setVariants(p.variants || []);
+          setInitialIsFeatured(p.isFeatured || false);
           setImages((p.imageUrls || []).map(url => ({ url })));
         } else {
           setError(result.error || "Failed to load product");
@@ -347,7 +355,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <CardTitle className="text-lg">Visibility Status</CardTitle>
              </CardHeader>
              <CardContent className="pt-8">
-                <div className="flex items-center justify-between p-4 bg-zinc-50/50 rounded-2xl border border-zinc-100">
+                <div className="flex items-center justify-between p-4 bg-zinc-50/50 rounded-2xl border border-zinc-100 mb-4">
                   <div className="space-y-0.5">
                     <Label htmlFor="status" className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Storefront Visibility</Label>
                     <p className="text-[9px] text-zinc-400">Control if this product is visible to customers.</p>
@@ -356,6 +364,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     id="status"
                     checked={formData.isActive} 
                     onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-brand-cream/30 rounded-2xl border border-brand-gold/10">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="featured" className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">Featured Spotlight</Label>
+                    <p className="text-[9px] text-zinc-400">Display this product on the Homepage spotlight.</p>
+                  </div>
+                  <Switch 
+                    id="featured"
+                    checked={formData.isFeatured} 
+                    onCheckedChange={(checked) => {
+                      if (checked && !initialIsFeatured && featuredCount >= 4) {
+                        toast.info("Only 4 products can be populated in the landing spotlight. Please select your most important 4 products.");
+                      }
+                      setFormData({...formData, isFeatured: checked});
+                    }}
                   />
                 </div>
              </CardContent>

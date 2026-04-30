@@ -2,6 +2,7 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { sendNewProductLaunchEmail } from "@/lib/marketing-emails";
+import { revalidatePath } from "next/cache";
 
 export async function createProductAction(data: any) {
   try {
@@ -30,7 +31,7 @@ export async function createProductAction(data: any) {
       stock: totalStock,
       imageUrls: data.imageUrls || [],
       isActive: data.isActive !== undefined ? data.isActive : true,
-      isFeatured: false,
+      isFeatured: data.isFeatured || false,
       hasVariants: data.hasVariants || false,
       options: data.options || [],
       variants: data.variants || [],
@@ -59,6 +60,8 @@ export async function createProductAction(data: any) {
       console.error("Failed to send launch emails:", emailErr);
     }
 
+    revalidatePath("/");
+    revalidatePath("/products");
     return { success: true, id: docRef.id };
   } catch (err: any) {
     console.error("Server Action Error (createProduct):", err);
@@ -90,6 +93,8 @@ export async function deleteProductAction(id: string) {
     // await verifyPermission(currentUserId, 'products', 'delete');
     
     await adminDb.collection("products").doc(id).delete();
+    revalidatePath("/");
+    revalidatePath("/products");
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (deleteProduct):", err);
@@ -103,6 +108,8 @@ export async function toggleProductStatusAction(id: string, currentStatus: boole
       isActive: !currentStatus,
       updatedAt: Date.now()
     });
+    revalidatePath("/");
+    revalidatePath("/products");
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (toggleProductStatus):", err);
@@ -150,6 +157,7 @@ export async function updateProductAction(id: string, data: any) {
       stock: totalStock,
       imageUrls: data.imageUrls || [],
       isActive: data.isActive,
+      isFeatured: data.isFeatured || false,
       hasVariants: data.hasVariants || false,
       options: data.options || [],
       variants: data.variants || [],
@@ -157,9 +165,21 @@ export async function updateProductAction(id: string, data: any) {
     };
 
     await adminDb.collection("products").doc(id).update(updateData);
+    revalidatePath("/");
+    revalidatePath("/products");
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (updateProduct):", err);
     return { success: false, error: err.message || "Failed to update product" };
+  }
+}
+
+export async function getFeaturedCountAction() {
+  try {
+    const snapshot = await adminDb.collection("products").where("isFeatured", "==", true).get();
+    return { success: true, count: snapshot.size };
+  } catch (err: any) {
+    console.error("Server Action Error (getFeaturedCount):", err);
+    return { success: false, error: err.message };
   }
 }

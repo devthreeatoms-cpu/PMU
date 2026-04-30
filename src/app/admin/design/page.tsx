@@ -42,6 +42,23 @@ const SocialIcons = {
   )
 };
 
+function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
+  return (
+    <button
+      onClick={onChange}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+        enabled ? "bg-green-500" : "bg-zinc-200"
+      }`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+          enabled ? "translate-x-5" : "translate-x-0.5"
+        }`}
+      />
+    </button>
+  );
+}
+
 export default function AdminDesignPage() {
   const [settings, setSettings] = useState<ShopAllSettings | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({
@@ -437,9 +454,15 @@ export default function AdminDesignPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <SocialIcons.Instagram /> Instagram URL
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                <SocialIcons.Instagram /> Instagram URL
+              </label>
+              <Toggle 
+                enabled={socialLinks.showInstagram !== false} 
+                onChange={() => setSocialLinks({ ...socialLinks, showInstagram: !socialLinks.showInstagram })}
+              />
+            </div>
             <input 
               type="text"
               value={socialLinks.instagram || ""}
@@ -450,9 +473,15 @@ export default function AdminDesignPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <SocialIcons.Facebook /> Facebook URL
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                <SocialIcons.Facebook /> Facebook URL
+              </label>
+              <Toggle 
+                enabled={socialLinks.showFacebook !== false} 
+                onChange={() => setSocialLinks({ ...socialLinks, showFacebook: !socialLinks.showFacebook })}
+              />
+            </div>
             <input 
               type="text"
               value={socialLinks.facebook || ""}
@@ -463,9 +492,15 @@ export default function AdminDesignPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <SocialIcons.Whatsapp /> WhatsApp Number
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                <SocialIcons.Whatsapp /> WhatsApp Number
+              </label>
+              <Toggle 
+                enabled={socialLinks.showWhatsapp !== false} 
+                onChange={() => setSocialLinks({ ...socialLinks, showWhatsapp: !socialLinks.showWhatsapp })}
+              />
+            </div>
             <input 
               type="text"
               value={socialLinks.whatsapp || ""}
@@ -476,9 +511,15 @@ export default function AdminDesignPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <SocialIcons.Youtube /> YouTube URL
-            </label>
+            <div className="flex justify-between items-center">
+              <label className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                <SocialIcons.Youtube /> YouTube URL
+              </label>
+              <Toggle 
+                enabled={socialLinks.showYoutube !== false} 
+                onChange={() => setSocialLinks({ ...socialLinks, showYoutube: !socialLinks.showYoutube })}
+              />
+            </div>
             <input 
               type="text"
               value={socialLinks.youtube || ""}

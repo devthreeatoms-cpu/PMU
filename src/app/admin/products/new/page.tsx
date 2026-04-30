@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { ProductCategory } from "@/lib/types";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { createProductAction } from "../actions";
+import { createProductAction, getFeaturedCountAction } from "../actions";
 import VariantManager from "../VariantManager";
 import { ProductOption, ProductVariant } from "@/lib/types";
 
@@ -43,6 +43,7 @@ export default function AddProductPage() {
     category: "",
     stock: "0",
     isActive: true,
+    isFeatured: false,
   });
   
   const [hasVariants, setHasVariants] = useState(false);
@@ -52,16 +53,19 @@ export default function AddProductPage() {
   const [images, setImages] = useState<{url: string, file?: File}[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [featuredCount, setFeaturedCount] = useState(0);
 
   useEffect(() => {
-    async function loadCategories() {
-      const res = await getCategoriesAction();
-      if (res.success && res.categories) {
-        setCategories(res.categories);
-      }
+    async function loadData() {
+      const [catRes, featRes] = await Promise.all([
+        getCategoriesAction(),
+        getFeaturedCountAction()
+      ]);
+      if (catRes.success && catRes.categories) setCategories(catRes.categories);
+      if (featRes.success) setFeaturedCount(featRes.count || 0);
       setIsLoadingCategories(false);
     }
-    loadCategories();
+    loadData();
   }, []);
 
   const handleExternalImageAdd = () => {
@@ -294,6 +298,23 @@ export default function AddProductPage() {
                   id="status"
                   checked={formData.isActive} 
                   onCheckedChange={(checked) => setFormData({...formData, isActive: checked})}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-brand-cream/30 rounded-xl border border-brand-gold/10">
+                <div className="space-y-0.5">
+                  <Label htmlFor="featured" className="text-xs font-bold uppercase tracking-widest text-brand-gold">Featured</Label>
+                  <p className="text-[10px] text-zinc-400">Show this in the Homepage spotlight.</p>
+                </div>
+                <Switch 
+                  id="featured"
+                  checked={formData.isFeatured} 
+                  onCheckedChange={(checked) => {
+                    if (checked && featuredCount >= 4) {
+                      toast.info("Only 4 products can be populated in the landing spotlight. Please select your most important 4 products.");
+                    }
+                    setFormData({...formData, isFeatured: checked});
+                  }}
                 />
               </div>
               <div className="space-y-2">

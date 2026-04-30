@@ -10,6 +10,7 @@ import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { ArtistSection } from "@/components/home/ArtistSection";
 import { GallerySection } from "@/components/home/GallerySection";
 import { getAllProductsServer, getCategoriesServer, getBannersServer, ServerBanner, ServerCategory } from "@/lib/services/server";
+import { getHeroSettingsAction } from "./admin/banners/hero-actions";
 import { Product } from "@/lib/types";
 
 // ─── Page-level metadata ─────────────────────────────────────────────────────
@@ -180,15 +181,18 @@ function DynamicBannerSection({ banner }: { banner: ServerBanner }) {
 
 export default async function Home() {
   // Fetch all data on the server in parallel
-  const [allProducts, categories, banners] = await Promise.all([
+  const [allProducts, categories, banners, heroRes] = await Promise.all([
     getAllProductsServer(),
     getCategoriesServer(),
     getBannersServer(),
+    getHeroSettingsAction()
   ]);
 
-  // Featured products: first 4 active products
+  // Featured products: hand-picked featured products (locked to 4), fallback to first 4 active
   const activeProducts = allProducts.filter((p) => p.isActive !== false);
-  const featuredProducts = activeProducts.slice(0, 4);
+  const featuredProducts = activeProducts.some(p => p.isFeatured)
+    ? activeProducts.filter(p => p.isFeatured).slice(0, 4)
+    : activeProducts.slice(0, 4);
 
   // Build category grid data
   const categoryData = allProducts.reduce(
@@ -215,7 +219,22 @@ export default async function Home() {
     <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
-      <ModernHero />
+      <ModernHero settings={heroRes.settings || {
+        title: "PRECISION",
+        highlightedTitle: "PMU",
+        subtitle: "THE COMPLETE CATALOG",
+        description: "Enter the vault of unlimited possibilities. From revolutionary E95 Machines to our signature Organic Pigments—we supply everything an elite PMU artist needs.",
+        imageUrl: "/images/landing/master-studio.png",
+        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-glitter-particles-moving-in-a-black-background-4217-large.mp4",
+        buttonText: "VIEW ALL PRODUCTS",
+        buttonLink: "/products",
+        stats: [
+          { label: "300+", sub: "SKUs" },
+          { label: "100%", sub: "Vegan" },
+          { label: "PRO", sub: "Level" },
+          { label: "INDIA", sub: "Supply" }
+        ]
+      }} />
 
       <SectionDivider />
 
@@ -256,30 +275,16 @@ export default async function Home() {
       <FeaturedProducts products={featuredProducts} />
 
       <SectionDivider />
-
-      {/* Dynamic Banners (first 2) */}
-      {banners.slice(0, 2).map((banner, index) => (
-        <React.Fragment key={banner.id}>
-          <DynamicBannerSection banner={banner} />
-          {index < 1 && <SectionDivider />}
-        </React.Fragment>
-      ))}
-
-      <SectionDivider />
-
-      <GallerySection />
-
-      <SectionDivider />
-
-      {/* Remaining banners */}
-      {banners.slice(2).map((banner) => (
+      
+      {/* Dynamic Banners — ALL banners now appear together above results */}
+      {banners.map((banner, index) => (
         <React.Fragment key={banner.id}>
           <DynamicBannerSection banner={banner} />
           <SectionDivider />
         </React.Fragment>
       ))}
 
-      <ArtistSection />
+      <GallerySection />
 
       <SectionDivider />
 
@@ -295,6 +300,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <SectionDivider />
 
       <Footer />
     </main>

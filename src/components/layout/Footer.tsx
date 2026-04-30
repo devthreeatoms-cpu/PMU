@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getSocialLinks } from "@/lib/services/admin";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { SocialLinks } from "@/lib/types";
 import { MessageCircle, X, Phone, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,16 +36,17 @@ export function Footer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    async function fetchLinks() {
-      try {
-        const links = await getSocialLinks();
-        console.log("Fetched social links:", links);
-        if (links) setSocialLinks(links);
-      } catch (err) {
-        console.error("Error fetching social links:", err);
+    // Listen to social links in real-time
+    const socialRef = doc(db, "siteSettings", "social");
+    const unsubscribe = onSnapshot(socialRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as SocialLinks;
+        console.log("Real-time social update:", data);
+        setSocialLinks(data);
       }
-    }
-    fetchLinks();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -74,22 +76,22 @@ export function Footer() {
 
             {/* Social Presence - Now under description */}
             <div className="flex flex-wrap gap-4 pt-2">
-              {socialLinks.instagram && (
+              {socialLinks.instagram && socialLinks.showInstagram !== false && (
                 <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/40 border border-brand-gold/10 rounded-full text-zinc-700 hover:bg-brand-gold hover:text-white transition-all shadow-sm active:scale-90">
                   <SocialIcons.Instagram />
                 </a>
               )}
-              {socialLinks.facebook && (
+              {socialLinks.facebook && socialLinks.showFacebook !== false && (
                 <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/40 border border-brand-gold/10 rounded-full text-zinc-700 hover:bg-brand-gold hover:text-white transition-all shadow-sm active:scale-90">
                   <SocialIcons.Facebook />
                 </a>
               )}
-              {socialLinks.whatsapp && (
+              {socialLinks.whatsapp && socialLinks.showWhatsapp !== false && (
                 <a href={`https://wa.me/${String(socialLinks.whatsapp).replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/40 border border-brand-gold/10 rounded-full text-zinc-700 hover:bg-brand-gold hover:text-white transition-all shadow-sm active:scale-90">
                   <SocialIcons.WhatsApp />
                 </a>
               )}
-              {socialLinks.youtube && (
+              {socialLinks.youtube && socialLinks.showYoutube !== false && (
                 <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/40 border border-brand-gold/10 rounded-full text-zinc-700 hover:bg-brand-gold hover:text-white transition-all shadow-sm active:scale-90">
                   <SocialIcons.Youtube />
                 </a>
@@ -124,10 +126,11 @@ export function Footer() {
               <h4 className="text-[9px] font-black tracking-[0.4em] uppercase text-brand-gold opacity-80">Studio Support</h4>
               <ul className="space-y-3">
                 {[
-                  { name: "Our Story", href: "/pages/about" },
-                  { name: "Affiliate", href: "/pages/affiliate" },
-                  { name: "Contact Us", href: "/pages/contact" },
-                  { name: "Disclaimer", href: "/pages/disclaimer" }
+                  { name: "Return Policy", href: "/pages/return-policy" },
+                  { name: "Terms & Conditions", href: "/pages/terms" },
+                  { name: "Shipping Policy", href: "/pages/shipping-policy" },
+                  { name: "Privacy Policy", href: "/pages/privacy" },
+                  { name: "Contact Us", href: "/pages/contact" }
                 ].map((item) => (
                   <li key={item.name}>
                     <Link href={item.href} className="text-zinc-700 hover:text-brand-gold transition-all duration-300 text-[10px] font-bold tracking-widest uppercase flex items-center group">
@@ -162,15 +165,7 @@ export function Footer() {
             </p>
             <p className="text-zinc-500 text-[7px] tracking-[0.1em] uppercase italic">The Elite Choice for Permanent Artistry</p>
           </div>
-          
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
-            <span className="text-brand-gold text-[8px] font-black tracking-[0.3em] uppercase italic transition-opacity hover:opacity-70">Precision Driven</span>
-            <span className="text-brand-gold text-[8px] font-black tracking-[0.3em] uppercase italic transition-opacity hover:opacity-70">Medical Grade</span>
-            <span className="text-brand-gold text-[8px] font-black tracking-[0.3em] uppercase italic transition-opacity hover:opacity-70">Artist Approved</span>
-          </div>
-        </div>
 
-        <div className="mt-8 flex justify-center pb-2">
           <button 
             onClick={() => setIsModalOpen(true)}
             className="text-[10px] text-[#FF4D6D] hover:opacity-80 transition-all duration-300 tracking-[0.2em] uppercase flex items-center gap-1 group"
