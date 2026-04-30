@@ -11,7 +11,7 @@ export async function onUserRegisteredAction(email: string, name: string) {
     // 2. Generate and Send Email Verification Link
     try {
       const link = await adminAuth.generateEmailVerificationLink(email, {
-        url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/login`
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://pmu-phi.vercel.app'}/login`
       });
       await sendEmailVerification(email, link);
     } catch (verifErr) {

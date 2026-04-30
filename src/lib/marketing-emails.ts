@@ -2,6 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
 /**
  * Reuses the branding logic but for marketing purposes.
@@ -24,14 +25,14 @@ const MarketingEmailWrapper = (content: string, previewText?: string) => `
     <!-- Footer -->
     <div style="padding: 50px 40px; text-align: center; font-size: 11px; color: #666; background-color: #000;">
       <div style="margin-bottom: 25px;">
-        <a href="https://pmusupply.com/products" style="color: #C9A84C; text-decoration: none; margin: 0 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">New Arrivals</a>
-        <a href="https://pmusupply.com/profile" style="color: #C9A84C; text-decoration: none; margin: 0 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">My Studio</a>
+        <a href="${BASE_URL}/products" style="color: #C9A84C; text-decoration: none; margin: 0 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">New Arrivals</a>
+        <a href="${BASE_URL}/profile" style="color: #C9A84C; text-decoration: none; margin: 0 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">My Studio</a>
       </div>
       <p style="margin: 5px 0; color: #999;">© 2026 PMU SUPPLY. All rights reserved.</p>
       <p style="margin: 5px 0; color: #555;">You are receiving this because you are part of our professional artist community.</p>
       <p style="margin-top: 20px; color: #C9A84C; font-style: italic;">Elevating the Art of Permanent Makeup.</p>
       <div style="margin-top: 30px; border-top: 1px solid #222; padding-top: 20px;">
-        <a href="{{unsubscribe}}" style="color: #444; text-decoration: underline;">Unsubscribe from elite updates</a>
+        <a href="${BASE_URL}/profile" style="color: #444; text-decoration: underline;">Unsubscribe from elite updates</a>
       </div>
     </div>
   </div>
@@ -50,7 +51,7 @@ export async function sendNewProductLaunchEmail(emails: string[], product: any) 
         Designed for artists who refuse to compromise on precision. ${product.description || "Experience the difference of world-class engineering."}
       </p>
 
-      <a href="https://pmusupply.com/products/${product.id}" style="background-color: #000; color: #fff; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);">Acquire Now</a>
+      <a href="${BASE_URL}/products/${product.id}" style="background-color: #000; color: #fff; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);">Acquire Now</a>
     </div>
   `;
 
@@ -87,7 +88,7 @@ export async function sendSaleAnnouncementEmail(emails: string[], saleName: stri
       ` : ""}
 
       <div style="text-align: center;">
-        <a href="https://pmusupply.com/products" style="background-color: #000; color: #fff; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px;">Enter the Sale</a>
+        <a href="${BASE_URL}/products" style="background-color: #000; color: #fff; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px;">Enter the Sale</a>
       </div>
     </div>
   `;
@@ -121,7 +122,7 @@ export async function sendFlashSaleEmail(emails: string[], duration: string, dis
 
       <p style="font-size: 14px; color: #888; margin-bottom: 40px;">No code needed. Prices adjusted at checkout. This offer will not be repeated.</p>
 
-      <a href="https://pmusupply.com/products" style="background-color: #C9A84C; color: #000; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px;">Claim Your Assets</a>
+      <a href="${BASE_URL}/products" style="background-color: #C9A84C; color: #000; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px;">Claim Your Assets</a>
     </div>
   `;
 

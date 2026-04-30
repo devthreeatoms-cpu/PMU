@@ -34,13 +34,13 @@ export async function sendSaleCampaignAction(saleName: string, discount: string,
         
         await adminDb.collection("coupons").add({
           code: code.toUpperCase(),
-          discountType: isPercentage ? 'percentage' : 'fixed',
-          discountValue: numericValue,
+          type: isPercentage ? 'percentage' : 'flat',
+          value: numericValue,
           description: `Campaign: ${saleName}`,
           isActive: true,
-          usageLimit: null,
+          usageLimit: null, // null for unlimited
           usageCount: 0,
-          expiryDate: null, // Admin can edit this later
+          expiryDate: Date.now() + (30 * 24 * 60 * 60 * 1000), // Default 30 days
           createdAt: Date.now()
         });
       } catch (couponErr) {

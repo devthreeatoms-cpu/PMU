@@ -2,6 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
 /**
  * Premium Email Wrapper for PMU SUPPLY
@@ -25,9 +26,9 @@ const ProfessionalEmailWrapper = (content: string, previewText?: string) => `
     <!-- Footer -->
     <div style="padding: 40px; text-align: center; font-size: 11px; color: #999; background-color: #f9f9f9;">
       <div style="margin-bottom: 20px;">
-        <a href="https://pmusupply.com" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">Store</a>
-        <a href="https://pmusupply.com/profile" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">My Account</a>
-        <a href="https://pmusupply.com/support" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">Support</a>
+        <a href="${BASE_URL}" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">Store</a>
+        <a href="${BASE_URL}/profile" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">My Account</a>
+        <a href="${BASE_URL}/pages/contact" style="color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: 700; text-transform: uppercase;">Support</a>
       </div>
       <p style="margin: 5px 0;">© 2026 PMU SUPPLY. All rights reserved.</p>
       <p style="margin: 5px 0;">You are receiving this professional communication because of your activity on PMU SUPPLY.</p>
@@ -53,7 +54,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
     </div>
 
     <div style="text-align: center; margin-top: 40px;">
-      <a href="https://pmusupply.com/products" style="background-color: #000; color: #fff; padding: 18px 35px; text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-radius: 4px;">Explore Catalog</a>
+      <a href="${BASE_URL}/products" style="background-color: #000; color: #fff; padding: 18px 35px; text-decoration: none; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-radius: 4px;">Explore Catalog</a>
     </div>
   `;
 
@@ -290,7 +291,7 @@ export async function sendOrderStatusUpdateEmail(order: any) {
     </div>
 
     <div style="text-align: center; margin-top: 40px;">
-      <a href="https://pmusupply.com/profile" style="border: 2px solid #000; color: #000; padding: 15px 35px; text-decoration: none; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-radius: 4px;">Track Live Status</a>
+      <a href="${BASE_URL}/profile" style="border: 2px solid #000; color: #000; padding: 15px 35px; text-decoration: none; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-radius: 4px;">Track Live Status</a>
     </div>
   `;
 
