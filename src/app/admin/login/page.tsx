@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldAlert, ShieldCheck, Lock } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
@@ -104,19 +105,30 @@ export default function AdminLoginPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-gold/20 rounded-full blur-[120px]" />
       </div>
 
-      <div className="w-full max-w-md z-10">
-        <div className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white border border-brand-rose/30 shadow-xl mb-4 group transition-all duration-500 hover:border-brand-gold/50">
+      <div className="w-full max-w-4xl z-10 flex flex-col items-center">
+        <div className="text-center mb-4 w-full flex flex-col items-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white border border-brand-rose/30 shadow-xl z-20 group transition-all duration-500 hover:border-brand-gold/50">
             <ShieldCheck className="w-8 h-8 text-brand-gold group-hover:scale-110 transition-transform" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-brand-black flex items-center justify-center gap-3">
-             <img src="/images/logo1.png" alt="PMU SUPPLY" className="h-48 w-auto object-contain mix-blend-multiply brightness-[1.02]" />
-             <span className="text-zinc-400 font-light font-sans uppercase tracking-[0.1em] text-lg">SYSTEM ACCESS</span>
-          </h1>
-          <p className="text-zinc-400 text-xs tracking-[0.2em] uppercase font-medium">Secured Administrative Gateway</p>
+
+          <div className="flex flex-col items-center w-full -mt-10">
+            <div className="relative h-32 w-full max-w-[320px] md:h-56 md:max-w-[600px] transform transition-transform duration-700 hover:scale-[1.02]">
+              <Image 
+                src="/images/logo1.png" 
+                alt="PMU SUPPLY" 
+                fill
+                className="object-contain brightness-[1.05] contrast-[1.15]"
+                style={{ imageRendering: "-webkit-optimize-contrast" }}
+                quality={100}
+                priority
+              />
+            </div>
+          </div>
+
+          <p className="text-zinc-400 text-[10px] md:text-xs tracking-[0.4em] uppercase font-bold -mt-12 md:-mt-16">Secured Administrative Gateway</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl border border-brand-rose/20 p-8 rounded-[2rem] shadow-2xl">
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-brand-rose/20 p-8 rounded-[2rem] shadow-2xl -mt-4">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase ml-1">Admin Identifier</label>
@@ -208,7 +220,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-zinc-400 text-[10px] tracking-wide font-light italic">
+        <p className="mt-8 text-center text-zinc-400 text-[10px] tracking-wide font-light italic opacity-60">
           Unauthorized access attempts are logged and reported. <br/>
           By accessing this system, you agree to the administrative security protocols.
         </p>

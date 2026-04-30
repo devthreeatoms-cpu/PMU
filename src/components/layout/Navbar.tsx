@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingCart, User, Search, Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { 
+  ShoppingCart as CartIcon, 
+  User as UserIcon, 
+  Search as SearchIcon, 
+  Menu as MenuIcon, 
+  X, 
+  LogOut, 
+  ChevronDown 
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { SearchOverlay } from "./SearchOverlay";
@@ -100,42 +109,52 @@ export function Navbar() {
         <div className="w-full px-4 md:px-12">
           {/* Row 1: Logo and Action Icons */}
           <div className="flex items-center justify-between h-16 md:h-20 relative">
-            {/* Mobile Toggler */}
-            <div className="flex-1 lg:hidden">
+            {/* Left: Mobile Toggler (Mobile Only) */}
+            <div className="flex-none lg:hidden z-30">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-2 hover:bg-zinc-100 rounded-md transition-colors text-brand-black"
+                className="p-1 hover:bg-zinc-100 rounded-md transition-colors text-brand-black"
               >
-                <Menu className="h-6 w-6" />
+                <MenuIcon className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="flex-shrink-0 flex justify-center lg:absolute lg:left-1/2 lg:-translate-x-1/2 z-20">
-              <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105">
-                <img
-                  src="/images/logo1.png"
-                  alt="PMU SUPPLY"
-                  className="h-32 md:h-52 w-auto object-contain mix-blend-multiply brightness-[1.02] contrast-[1.05] drop-shadow-md transition-all duration-500"
-                />
+            {/* Left Spacer for Desktop Centering */}
+            <div className="hidden lg:flex lg:flex-1" />
+
+            {/* Center: Logo (Shifted down further on both mobile and desktop) */}
+            <div className="flex-shrink-0 flex justify-center absolute left-[42%] xs:left-[45%] lg:left-1/2 -translate-x-1/2 top-[62%] md:top-[66%] -translate-y-1/2 z-20 pointer-events-none">
+              <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105 pointer-events-auto">
+                <div className="relative h-24 w-52 md:h-52 md:w-[450px]">
+                  <Image 
+                    src="/images/logo1.png" 
+                    alt="PMU SUPPLY" 
+                    fill
+                    className="object-contain brightness-[1.05] contrast-[1.1] transition-all duration-500"
+                    style={{ imageRendering: "-webkit-optimize-contrast" }}
+                    quality={100}
+                    priority
+                  />
+                </div>
               </Link>
             </div>
 
-            {/* Action Icons */}
-            <div className="flex-1 flex items-center justify-end gap-1 md:gap-4">
-              <button onClick={() => setIsSearchOpen(true)} className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
-                <Search className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
+            {/* Right: Action Icons */}
+            <div className="flex-none lg:flex-1 flex items-center justify-end gap-0.5 md:gap-4 z-30">
+              <button onClick={() => setIsSearchOpen(true)} className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
+                <SearchIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
               </button>
               {user ? (
-                <Link href="/profile" className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
-                  <User className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
+                <Link href="/profile" className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
+                  <UserIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
                 </Link>
               ) : (
-                <Link href="/login" className="p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
-                  <User className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
+                <Link href="/login" className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
+                  <UserIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
                 </Link>
               )}
-              <button onClick={() => setIsOpen(true)} className="relative p-1.5 md:p-2 hover:text-brand-gold transition-colors group">
-                <ShoppingCart className="h-4 w-4 md:h-5 md:h-5 group-hover:scale-110 transition-transform" />
+              <button onClick={() => setIsOpen(true)} className="relative p-1 md:p-2 hover:text-brand-gold transition-colors group">
+                <CartIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
                 {mounted && getCartCount() > 0 && (
                   <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-brand-gold text-white text-[8px] md:text-[10px] font-bold flex items-center justify-center">
                     {getCartCount()}
@@ -145,8 +164,8 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Row 2: Full Navigation Links (Ensures all are visible) */}
-          <nav className="hidden lg:flex flex-wrap items-center justify-center gap-x-8 gap-y-4 py-4 border-t border-zinc-50">
+          {/* Row 2: Navigation Links */}
+          <nav className="hidden lg:flex flex-wrap items-center justify-center gap-x-8 gap-y-4 py-4 border-t border-zinc-50 relative z-30">
             <Link href="/products" className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase">Shop All</Link>
             {categories.map((cat: any) => (
               <Link
@@ -168,11 +187,15 @@ export function Navbar() {
           <div className="container mx-auto px-4 py-6 flex flex-col gap-8 pb-20">
             <div className="flex items-center justify-between border-b border-brand-gold/10 pb-4">
               <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block">
-                <img
-                  src="/images/logo1.png"
-                  alt="PMU SUPPLY"
-                  className="h-28 w-auto object-contain mix-blend-multiply brightness-[1.02]"
-                />
+                <div className="relative h-20 w-48">
+                  <Image 
+                    src="/images/logo1.png" 
+                    alt="PMU SUPPLY" 
+                    fill
+                    className="object-contain"
+                    quality={100}
+                  />
+                </div>
               </Link>
               <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-brand-black">
                 <X className="h-6 w-6" />
