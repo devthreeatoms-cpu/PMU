@@ -78,7 +78,7 @@ export default function AdminLayout({
       <div className="min-h-screen bg-zinc-50 font-sans">
         <header className="h-16 flex items-center justify-between px-8 border-b border-zinc-200 bg-white shadow-sm">
           <div className="flex items-center gap-2">
-            <img src="/images/logo1.png" alt="PMU SUPPLY" className="h-10 w-auto object-contain mix-blend-multiply" />
+            <img src="/images/logo3.png" alt="PMU SUPPLY" className="h-10 w-auto object-contain mix-blend-multiply" />
             <span className="font-bold text-sm tracking-tight uppercase text-brand-gold"> DEV CONSOLE</span>
           </div>
             <div className="w-8 h-8 rounded-none bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-brand-gold">DEV</div>
@@ -98,7 +98,7 @@ export default function AdminLayout({
           <div className="h-20 flex items-center px-6 border-b border-zinc-200">
             <Link href="/admin" className="flex items-center gap-2 group">
               <img 
-                src="/images/logo1.png" 
+                src="/images/logo3.png" 
                 alt="PMU SUPPLY" 
                 className="h-14 w-auto object-contain mix-blend-multiply brightness-[1.02]"
               />
@@ -136,7 +136,7 @@ export default function AdminLayout({
               <div className="h-20 flex items-center justify-between px-6 border-b border-zinc-200">
                 <div className="flex items-center gap-2">
                   <img 
-                    src="/images/logo1.png" 
+                    src="/images/logo3.png" 
                     alt="PMU SUPPLY" 
                     className="h-12 w-auto object-contain mix-blend-multiply brightness-[1.02]"
                   />
