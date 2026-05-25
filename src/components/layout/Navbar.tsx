@@ -119,16 +119,13 @@ export function Navbar() {
               </button>
             </div>
 
-            {/* Left Spacer for Desktop Centering */}
-            <div className="hidden lg:flex lg:flex-1" />
-
-            {/* Center: Logo (Shifted down further on both mobile and desktop) */}
-            <div className="flex-shrink-0 flex justify-center absolute left-[42%] xs:left-[45%] lg:left-1/2 -translate-x-1/2 top-[62%] md:top-[66%] -translate-y-1/2 z-20 pointer-events-none">
-              <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105 pointer-events-auto">
-                <div className="relative h-24 w-52 md:h-52 md:w-[450px]">
-                  <Image 
-                    src="/images/logo4.png" 
-                    alt="PMU SUPPLY" 
+            {/* Center: Logo */}
+            <div className="flex-1 flex justify-center z-20">
+              <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105">
+                <div className="relative h-12 w-40 md:h-14 md:w-48">
+                  <Image
+                    src="/images/logo4.png"
+                    alt="PMU SUPPLY"
                     fill
                     className="object-contain brightness-[1.05] contrast-[1.1] transition-all duration-500"
                     style={{ imageRendering: "-webkit-optimize-contrast" }}
@@ -140,7 +137,7 @@ export function Navbar() {
             </div>
 
             {/* Right: Action Icons */}
-            <div className="flex-none lg:flex-1 flex items-center justify-end gap-0.5 md:gap-4 z-30">
+            <div className="flex-none flex items-center justify-end gap-0.5 md:gap-4 z-30">
               <button onClick={() => setIsSearchOpen(true)} className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
                 <SearchIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
               </button>
@@ -187,7 +184,7 @@ export function Navbar() {
           <div className="container mx-auto px-4 py-6 flex flex-col gap-8 pb-20">
             <div className="flex items-center justify-between border-b border-brand-gold/10 pb-4">
               <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block">
-                <div className="relative h-20 w-48">
+                <div className="relative h-12 w-40">
                   <Image 
                     src="/images/logo4.png" 
                     alt="PMU SUPPLY" 

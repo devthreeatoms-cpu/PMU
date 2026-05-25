@@ -62,11 +62,11 @@ export function Footer() {
           {/* Brand Column: The Manifesto & Social Presence */}
           <div className="lg:col-span-5 flex flex-col items-start space-y-4 text-left">
             <div className="flex flex-col items-start space-y-0 w-full">
-              <Link href="/" className="inline-block transform transition-transform hover:scale-105 duration-500 -mt-10 -ml-12 md:-ml-16">
-                <div className="relative h-24 md:h-36 w-64 md:w-80">
-                  <Image 
-                    src="/images/logo4.png" 
-                    alt="PMU SUPPLY" 
+              <Link href="/" className="inline-block transform transition-transform hover:scale-105 duration-500">
+                <div className="relative h-14 md:h-16 w-44 md:w-52">
+                  <Image
+                    src="/images/logo4.png"
+                    alt="PMU SUPPLY"
                     fill
                     className="object-contain object-left mix-blend-multiply brightness-[1.02] contrast-[1.1]"
                     style={{ imageRendering: "-webkit-optimize-contrast" }}
@@ -75,7 +75,7 @@ export function Footer() {
                   />
                 </div>
               </Link>
-              <div className="relative max-w-sm -mt-10 md:-mt-14">
+              <div className="relative max-w-sm mt-4">
                 <div className="absolute left-0 top-0 bottom-0 w-[1.5px] bg-brand-gold/40" />
                 <p className="text-zinc-800 text-xs md:text-sm font-light italic leading-relaxed pl-6 tracking-wide">
                   "The ultimate destination for elite permanent makeup artists in India. We curate only the most precise, medical-grade tools to empower your creative vision."
