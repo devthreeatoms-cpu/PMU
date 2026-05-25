@@ -114,7 +114,7 @@ export default function AdminLoginPage() {
           <div className="flex flex-col items-center w-full -mt-10">
             <div className="relative h-32 w-full max-w-[320px] md:h-56 md:max-w-[600px] transform transition-transform duration-700 hover:scale-[1.02]">
               <Image 
-                src="/images/logo3.png" 
+                src="/images/logo4.png" 
                 alt="PMU SUPPLY" 
                 fill
                 className="object-contain brightness-[1.05] contrast-[1.15]"

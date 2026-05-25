@@ -65,7 +65,7 @@ export function Footer() {
               <Link href="/" className="inline-block transform transition-transform hover:scale-105 duration-500 -mt-10 -ml-12 md:-ml-16">
                 <div className="relative h-24 md:h-36 w-64 md:w-80">
                   <Image 
-                    src="/images/logo3.png" 
+                    src="/images/logo4.png" 
                     alt="PMU SUPPLY" 
                     fill
                     className="object-contain object-left mix-blend-multiply brightness-[1.02] contrast-[1.1]"

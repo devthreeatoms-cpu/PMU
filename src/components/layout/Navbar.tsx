@@ -127,7 +127,7 @@ export function Navbar() {
               <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105 pointer-events-auto">
                 <div className="relative h-24 w-52 md:h-52 md:w-[450px]">
                   <Image 
-                    src="/images/logo3.png" 
+                    src="/images/logo4.png" 
                     alt="PMU SUPPLY" 
                     fill
                     className="object-contain brightness-[1.05] contrast-[1.1] transition-all duration-500"
@@ -189,7 +189,7 @@ export function Navbar() {
               <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block">
                 <div className="relative h-20 w-48">
                   <Image 
-                    src="/images/logo3.png" 
+                    src="/images/logo4.png" 
                     alt="PMU SUPPLY" 
                     fill
                     className="object-contain"
