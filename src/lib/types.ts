@@ -46,6 +46,8 @@ export interface Product {
   createdAt: number;
   updatedAt: number;
   views?: number;
+  gstRate?: number;
+  convenienceFee?: number;
 }
 
 export interface CartItem {

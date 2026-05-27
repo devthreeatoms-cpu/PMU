@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 const BANNERS_COLLECTION = "banners";
 
@@ -54,6 +55,7 @@ export async function getBannersAction() {
 }
 
 export async function getAllBannersAdminAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection(BANNERS_COLLECTION)
       .orderBy("order", "asc")
@@ -72,6 +74,7 @@ export async function getAllBannersAdminAction() {
 }
 
 export async function addBannerAction(banner: Omit<Banner, 'id' | 'createdAt'>) {
+  await requireAdmin();
   try {
     const docRef = await adminDb.collection(BANNERS_COLLECTION).add({
       ...banner,
@@ -85,6 +88,7 @@ export async function addBannerAction(banner: Omit<Banner, 'id' | 'createdAt'>) 
 }
 
 export async function updateBannerAction(id: string, banner: Partial<Banner>) {
+  await requireAdmin();
   try {
     await adminDb.collection(BANNERS_COLLECTION).doc(id).update({
       ...banner,
@@ -98,6 +102,7 @@ export async function updateBannerAction(id: string, banner: Partial<Banner>) {
 }
 
 export async function deleteBannerAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection(BANNERS_COLLECTION).doc(id).delete();
     return { success: true };
@@ -108,6 +113,7 @@ export async function deleteBannerAction(id: string) {
 }
 
 export async function reorderBannersAction(bannerIds: string[]) {
+  await requireAdmin();
   try {
     const batch = adminDb.batch();
     bannerIds.forEach((id, index) => {

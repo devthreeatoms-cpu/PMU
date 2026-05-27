@@ -3,8 +3,10 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { UserProfile, PointTransaction } from "@/lib/types";
 import { FieldValue } from "firebase-admin/firestore";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getAllUsersAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("users").get();
     const users = snapshot.docs.map(doc => ({
@@ -20,6 +22,7 @@ export async function getAllUsersAction() {
 }
 
 export async function adjustUserPointsAction(userId: string, pointsDelta: number, reason: string, adminId: string = "SYSTEM") {
+  await requireAdmin();
   try {
     const batch = adminDb.batch();
     const userRef = adminDb.collection("users").doc(userId);
@@ -49,6 +52,7 @@ export async function adjustUserPointsAction(userId: string, pointsDelta: number
 }
 
 export async function getUserTransactionsAction(userId: string) {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("users")
       .doc(userId)
@@ -69,6 +73,7 @@ export async function getUserTransactionsAction(userId: string) {
 }
 
 export async function setUserRoleAction(userId: string, role: 'admin' | 'customer') {
+  await requireAdmin();
   try {
     await adminDb.collection("users").doc(userId).update({ role });
     return { success: true };
@@ -79,6 +84,7 @@ export async function setUserRoleAction(userId: string, role: 'admin' | 'custome
 }
 
 export async function registerUserAction(data: { email: string; displayName: string; password: string; role: string }) {
+  await requireAdmin();
   try {
     const { adminAuth } = await import("@/lib/firebase-admin");
     const userRecord = await adminAuth.createUser({

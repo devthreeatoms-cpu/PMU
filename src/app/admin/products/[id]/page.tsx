@@ -43,6 +43,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     stock: "0",
     isActive: true,
     isFeatured: false,
+    gstRate: "",
+    convenienceFee: "",
   });
   
   const [hasVariants, setHasVariants] = useState(false);
@@ -86,6 +88,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             stock: p.stock.toString(),
             isActive: p.isActive !== false,
             isFeatured: p.isFeatured || false,
+            gstRate: p.gstRate?.toString() || "",
+            convenienceFee: p.convenienceFee?.toString() || "",
           });
           setHasVariants(p.hasVariants || false);
           setOptions(p.options || []);
@@ -281,7 +285,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sku" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Reference SKU</Label>
-                    <Input 
+                    <Input
                       id="sku" value={formData.sku}
                       onChange={(e) => setFormData({...formData, sku: e.target.value})}
                       className="h-12 bg-zinc-50/50 border-zinc-100"
@@ -289,10 +293,38 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="stock" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Available Inventory</Label>
-                    <Input 
+                    <Input
                       id="stock" type="number" value={formData.stock}
                       onChange={(e) => setFormData({...formData, stock: e.target.value})}
                       required className="h-12 bg-zinc-50/50 border-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gstRate" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">GST Rate (%)</Label>
+                    <Select
+                      value={formData.gstRate}
+                      onValueChange={(val) => setFormData({...formData, gstRate: val})}
+                    >
+                      <SelectTrigger id="gstRate" className="h-12 bg-zinc-50/50 border-zinc-100 text-xs">
+                        <SelectValue placeholder="Select GST rate" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">0% — Exempt</SelectItem>
+                        <SelectItem value="5">5%</SelectItem>
+                        <SelectItem value="12">12%</SelectItem>
+                        <SelectItem value="18">18%</SelectItem>
+                        <SelectItem value="28">28%</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="convenienceFee" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Convenience Fee (₹)</Label>
+                    <Input
+                      id="convenienceFee" type="number" step="0.01" min="0"
+                      value={formData.convenienceFee}
+                      onChange={(e) => setFormData({...formData, convenienceFee: e.target.value})}
+                      placeholder="0.00"
+                      className="h-12 bg-zinc-50/50 border-zinc-100"
                     />
                   </div>
                 </div>

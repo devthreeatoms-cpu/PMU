@@ -2,8 +2,10 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getGlobalSettingsAction() {
+  await requireAdmin();
   try {
     const doc = await adminDb.collection("settings").doc("global").get();
     if (!doc.exists) {
@@ -22,6 +24,7 @@ export async function getGlobalSettingsAction() {
 }
 
 export async function updateNewArrivalsToggleAction(enabled: boolean) {
+  await requireAdmin();
   try {
     await adminDb.collection("settings").doc("global").set({
       newArrivalsEmailEnabled: enabled,

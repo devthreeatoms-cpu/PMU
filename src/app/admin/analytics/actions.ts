@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ const PAID_STATUSES = new Set(["paid", "processing", "shipped", "delivered"]);
 // ─── 1. AOV + fulfillment KPIs ───────────────────────────────────────────────
 
 export async function getAOVMetrics(period = "30d"): Promise<AOVMetrics> {
+  await requireAdmin();
   const start = periodStart(period);
   const allOrders = await fetchAllOrders();
   const orders = period === "all" ? allOrders : allOrders.filter(o => o.createdAt >= start);
@@ -137,6 +139,7 @@ export async function getAOVMetrics(period = "30d"): Promise<AOVMetrics> {
 // ─── 2. Top Products by Revenue ───────────────────────────────────────────────
 
 export async function getTopProducts(period = "30d"): Promise<TopProduct[]> {
+  await requireAdmin();
   const start = periodStart(period);
   const allOrders = await fetchAllOrders();
 
@@ -173,6 +176,7 @@ export async function getTopProducts(period = "30d"): Promise<TopProduct[]> {
 // ─── 3. Revenue by Category ───────────────────────────────────────────────────
 
 export async function getCategoryRevenue(period = "30d"): Promise<CategoryRevenue[]> {
+  await requireAdmin();
   const start = periodStart(period);
 
   // Parallel fetch — both use single-field queries (no composite index needed)
@@ -208,6 +212,7 @@ export async function getCategoryRevenue(period = "30d"): Promise<CategoryRevenu
 // ─── 4. Order Status Breakdown ────────────────────────────────────────────────
 
 export async function getOrderStatusBreakdown(period = "30d"): Promise<OrderStatusBreakdown[]> {
+  await requireAdmin();
   const start = periodStart(period);
   const allOrders = await fetchAllOrders();
   const orders = period === "all" ? allOrders : allOrders.filter(o => o.createdAt >= start);
@@ -229,6 +234,7 @@ export async function getOrderStatusBreakdown(period = "30d"): Promise<OrderStat
 // ─── 5. Geographic Breakdown ──────────────────────────────────────────────────
 
 export async function getCityBreakdown(period = "30d"): Promise<CityBreakdown[]> {
+  await requireAdmin();
   const start = periodStart(period);
   const allOrders = await fetchAllOrders();
 
@@ -255,6 +261,7 @@ export async function getCityBreakdown(period = "30d"): Promise<CityBreakdown[]>
 // ─── 6. Coupon Performance ────────────────────────────────────────────────────
 
 export async function getCouponStats(): Promise<CouponStat[]> {
+  await requireAdmin();
   const [couponsSnap, ordersSnap] = await Promise.all([
     adminDb.collection("coupons").orderBy("usageCount", "desc").get(),
     adminDb.collection("orders").get(),
@@ -317,6 +324,7 @@ export async function getCouponStats(): Promise<CouponStat[]> {
 // ─── 7. Referral Leaderboard ──────────────────────────────────────────────────
 
 export async function getReferralLeaderboard(): Promise<ReferralLeader[]> {
+  await requireAdmin();
   // Single-field: no orderBy — no composite index needed
   const snap  = await adminDb.collection("users").get();
   const users = snap.docs.map(d => ({ uid: d.id, ...d.data() })) as any[];
@@ -353,6 +361,7 @@ export async function getReferralLeaderboard(): Promise<ReferralLeader[]> {
 // Date range applied in-memory to avoid event+timestamp composite index.
 
 export async function getEventFunnel(period = "30d"): Promise<EventCounts> {
+  await requireAdmin();
   const start = periodStart(period);
 
   // Fetch each event type separately — single-field where, no orderBy

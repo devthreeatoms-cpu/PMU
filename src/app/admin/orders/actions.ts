@@ -4,9 +4,10 @@ import { adminDb } from "@/lib/firebase-admin";
 import { Order } from "@/lib/types";
 import { sendOrderStatusUpdateEmail, sendRefundConfirmationEmail } from "@/lib/email";
 import { FieldValue } from "firebase-admin/firestore";
-
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getOrdersAction(status?: string) {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("orders")
       .orderBy("createdAt", "desc")
@@ -31,6 +32,7 @@ export async function getOrdersAction(status?: string) {
 }
 
 export async function updateOrderStatusAction(id: string, status: Order["status"]) {
+  await requireAdmin();
   try {
     const orderRef = adminDb.collection("orders").doc(id);
     await orderRef.update({
@@ -63,6 +65,7 @@ export async function updateOrderStatusAction(id: string, status: Order["status"
 }
 
 export async function getOrderByIdAction(id: string) {
+  await requireAdmin();
   try {
     const docSnap = await adminDb.collection("orders").doc(id).get();
     if (!docSnap.exists) {
@@ -77,6 +80,7 @@ export async function getOrderByIdAction(id: string) {
 }
 
 export async function deleteOrderAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection("orders").doc(id).delete();
     return { success: true };

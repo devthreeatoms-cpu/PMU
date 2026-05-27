@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 const RESULTS_COLLECTION = "resultsGallery_v3";
 
@@ -31,6 +32,7 @@ export async function getResultsAction() {
 }
 
 export async function getAllResultsAdminAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection(RESULTS_COLLECTION)
       .orderBy("order", "asc")
@@ -49,6 +51,7 @@ export async function getAllResultsAdminAction() {
 }
 
 export async function addResultAction(result: { title: string; url: string; order: number; isActive: boolean }) {
+  await requireAdmin();
   try {
     const data = {
       title: result.title,
@@ -68,6 +71,7 @@ export async function addResultAction(result: { title: string; url: string; orde
 }
 
 export async function updateResultAction(id: string, result: Partial<ResultItem>) {
+  await requireAdmin();
   try {
     const updateData: any = {
       updatedAt: Date.now()
@@ -87,6 +91,7 @@ export async function updateResultAction(id: string, result: Partial<ResultItem>
 }
 
 export async function deleteResultAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection(RESULTS_COLLECTION).doc(id).delete();
     return { success: true };
@@ -97,6 +102,7 @@ export async function deleteResultAction(id: string) {
 }
 
 export async function reorderResultsAction(resultIds: string[]) {
+  await requireAdmin();
   try {
     const batch = adminDb.batch();
     resultIds.forEach((id, index) => {

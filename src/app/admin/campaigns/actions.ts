@@ -1,12 +1,14 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
-import { 
-  sendSaleAnnouncementEmail, 
-  sendFlashSaleEmail 
+import {
+  sendSaleAnnouncementEmail,
+  sendFlashSaleEmail
 } from "@/lib/marketing-emails";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function sendSaleCampaignAction(saleName: string, discount: string, code: string) {
+  await requireAdmin();
   try {
     const usersSnapshot = await adminDb.collection("users").get();
     const emails = usersSnapshot.docs
@@ -56,6 +58,7 @@ export async function sendSaleCampaignAction(saleName: string, discount: string,
 }
 
 export async function sendFlashSaleCampaignAction(duration: string, discount: string) {
+  await requireAdmin();
   try {
     const usersSnapshot = await adminDb.collection("users").get();
     const emails = usersSnapshot.docs

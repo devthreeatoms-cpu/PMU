@@ -29,6 +29,8 @@ export default function AdminLoginPage() {
 
       // Bootstrap bypass for owner
       if (loggedInUser.uid === BOOTSTRAP_ADMIN_UID) {
+        const idToken = await loggedInUser.getIdToken();
+        await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
         toast.success("Root Admin Access Granted.");
         router.push("/admin/dashboard");
         return;
@@ -46,6 +48,15 @@ export default function AdminLoginPage() {
           await auth.signOut();
           return;
         }
+
+        const idToken = await loggedInUser.getIdToken();
+        const sessionRes = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+        if (!sessionRes.ok) {
+          toast.error("Failed to establish secure session. Please try again.");
+          await auth.signOut();
+          return;
+        }
+
         toast.success("Identity Verified. Accessing Console...");
         router.push("/admin/dashboard");
       } catch {
@@ -69,6 +80,8 @@ export default function AdminLoginPage() {
 
       // Bootstrap bypass for owner
       if (loggedInUser.uid === BOOTSTRAP_ADMIN_UID) {
+        const idToken = await loggedInUser.getIdToken();
+        await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
         toast.success("Root Admin Access Granted.");
         router.push("/admin/dashboard");
         return;
@@ -82,6 +95,14 @@ export default function AdminLoginPage() {
 
       if (role !== "admin" && role !== "staff") {
         toast.error("Unauthorized: Administrative access only.");
+        await auth.signOut();
+        return;
+      }
+
+      const idToken = await loggedInUser.getIdToken();
+      const sessionRes = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+      if (!sessionRes.ok) {
+        toast.error("Failed to establish secure session. Please try again.");
         await auth.signOut();
         return;
       }

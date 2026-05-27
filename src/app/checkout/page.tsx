@@ -57,8 +57,21 @@ export default function CheckoutPage() {
   }, [appliedCoupon, subtotal]);
 
   const shippingAmount = (subtotal - discountAmount) > 12000 ? 0 : 150;
-  const taxAmount = (subtotal - discountAmount) * 0.08;
-  const total = Math.round(Math.max(0, subtotal - discountAmount + shippingAmount + taxAmount) * 100) / 100;
+
+  const gstAmount = useMemo(() => {
+    return items.reduce((sum, item) => {
+      const price = item.product.salePrice ?? item.product.price;
+      return sum + price * item.quantity * ((item.product.gstRate ?? 0) / 100);
+    }, 0);
+  }, [items]);
+
+  const convenienceFeeTotal = useMemo(() => {
+    return items.reduce((sum, item) => {
+      return sum + (item.product.convenienceFee ?? 0) * item.quantity;
+    }, 0);
+  }, [items]);
+
+  const total = Math.round(Math.max(0, subtotal - discountAmount + shippingAmount + gstAmount + convenienceFeeTotal) * 100) / 100;
 
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
@@ -506,10 +519,18 @@ export default function CheckoutPage() {
                         <span className="text-zinc-400">Global Logistics</span>
                         <span className="font-bold text-zinc-800">{shippingAmount === 0 ? "Complimentary" : `₹${shippingAmount.toFixed(2)}`}</span>
                       </div>
-                      <div className="flex justify-between tracking-widest uppercase text-[10px]">
-                        <span className="text-zinc-400">State Taxation</span>
-                        <span className="font-bold text-zinc-800">₹{taxAmount.toFixed(2)}</span>
-                      </div>
+                      {gstAmount > 0 && (
+                        <div className="flex justify-between tracking-widest uppercase text-[10px]">
+                          <span className="text-zinc-400">GST</span>
+                          <span className="font-bold text-zinc-800">₹{gstAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {convenienceFeeTotal > 0 && (
+                        <div className="flex justify-between tracking-widest uppercase text-[10px]">
+                          <span className="text-zinc-400">Convenience Fee</span>
+                          <span className="font-bold text-zinc-800">₹{convenienceFeeTotal.toFixed(2)}</span>
+                        </div>
+                      )}
                     <div className="pt-6 border-t border-brand-black flex justify-between items-baseline">
                       <span className="text-[11px] font-bold tracking-[0.4em] uppercase">Total Due</span>
                       <span className="text-2xl font-heading font-normal">₹{total.toFixed(2)}</span>

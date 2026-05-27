@@ -44,6 +44,8 @@ export default function AddProductPage() {
     stock: "0",
     isActive: true,
     isFeatured: false,
+    gstRate: "",
+    convenienceFee: "",
   });
   
   const [hasVariants, setHasVariants] = useState(false);
@@ -235,21 +237,51 @@ export default function AddProductPage() {
                    </div>
                    <div className="space-y-2">
                      <Label htmlFor="sku">SKU (Optional)</Label>
-                     <Input 
-                       id="sku" 
+                     <Input
+                       id="sku"
                        value={formData.sku}
                        onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                       placeholder="MK-10293" 
+                       placeholder="MK-10293"
                      />
                    </div>
                    <div className="space-y-2">
                      <Label htmlFor="stock">Stock Quantity</Label>
-                     <Input 
-                       id="stock" 
-                       type="number" 
+                     <Input
+                       id="stock"
+                       type="number"
                        value={formData.stock}
                        onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                       required 
+                       required
+                     />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="gstRate">GST Rate (%)</Label>
+                     <Select
+                       value={formData.gstRate}
+                       onValueChange={(val) => setFormData({...formData, gstRate: val})}
+                     >
+                       <SelectTrigger id="gstRate">
+                         <SelectValue placeholder="Select GST rate" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="0">0% — Exempt</SelectItem>
+                         <SelectItem value="5">5%</SelectItem>
+                         <SelectItem value="12">12%</SelectItem>
+                         <SelectItem value="18">18%</SelectItem>
+                         <SelectItem value="28">28%</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="convenienceFee">Convenience Fee (₹)</Label>
+                     <Input
+                       id="convenienceFee"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       value={formData.convenienceFee}
+                       onChange={(e) => setFormData({...formData, convenienceFee: e.target.value})}
+                       placeholder="0.00"
                      />
                    </div>
                  </div>

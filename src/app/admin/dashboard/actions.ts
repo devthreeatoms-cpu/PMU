@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // Orders in these statuses represent confirmed revenue
 const REVENUE_STATUSES = new Set(["paid", "processing", "shipped", "delivered"]);
@@ -122,6 +123,7 @@ function buildChartData(orders: any[], period: DashboardPeriod, now: number, per
 }
 
 export async function getDashboardStatsAction(period: DashboardPeriod = "today") {
+  await requireAdmin();
   try {
     const now = Date.now();
     const { start: periodStart, prevStart, label: trendLabel } = getPeriodConfig(period);

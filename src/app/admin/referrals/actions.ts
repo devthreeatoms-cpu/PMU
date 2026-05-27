@@ -2,8 +2,10 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { ReferralSettings, UserProfile } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getReferralSettingsAction() {
+  await requireAdmin();
   try {
     const docRef = adminDb.collection("siteSettings").doc("referral");
     const docSnap = await docRef.get();
@@ -18,6 +20,7 @@ export async function getReferralSettingsAction() {
 }
 
 export async function updateReferralSettingsAction(settings: ReferralSettings) {
+  await requireAdmin();
   try {
     await adminDb.collection("siteSettings").doc("referral").set(settings, { merge: true });
     return { success: true };
@@ -28,6 +31,7 @@ export async function updateReferralSettingsAction(settings: ReferralSettings) {
 }
 
 export async function getReferralAuditDataAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("users").get();
     const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as UserProfile[];

@@ -3,8 +3,10 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { Review } from "@/lib/types";
 import { createAdminNotification } from "@/lib/notifications";
+import { requireAdmin, requireAuth } from "@/lib/auth-helpers";
 
 export async function submitReviewAction(data: Partial<Review>) {
+  const { uid } = await requireAuth();
   try {
     const reviewData = {
       ...data,
@@ -30,6 +32,7 @@ export async function submitReviewAction(data: Partial<Review>) {
 }
 
 export async function updateReviewStatusAction(id: string, status: Review["status"]) {
+  await requireAdmin();
   try {
     await adminDb.collection("reviews").doc(id).update({ status });
     return { success: true };
@@ -40,6 +43,7 @@ export async function updateReviewStatusAction(id: string, status: Review["statu
 }
 
 export async function deleteReviewAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection("reviews").doc(id).delete();
     return { success: true };
@@ -50,6 +54,7 @@ export async function deleteReviewAction(id: string) {
 }
 
 export async function createManualReviewAction(data: Partial<Review>) {
+  await requireAdmin();
   try {
     const reviewData = {
       ...data,
@@ -97,6 +102,7 @@ export async function getPendingReviewCountAction() {
 }
 
 export async function getAllReviewsAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("reviews").orderBy("createdAt", "desc").get();
     const reviews = snapshot.docs.map(doc => ({
@@ -130,6 +136,7 @@ export async function checkProductPurchaseAction(userId: string, productId: stri
 }
 
 export async function replyToReviewAction(reviewId: string, reply: string) {
+  await requireAdmin();
   try {
     await adminDb.collection("reviews").doc(reviewId).update({
       adminReply: reply,

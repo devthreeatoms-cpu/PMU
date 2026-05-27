@@ -2,8 +2,10 @@
 
 import { adminDb } from "@/lib/firebase-admin";
 import { AdminNotification } from "@/lib/notifications";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getNotificationsAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("notifications")
       .orderBy("createdAt", "desc")
@@ -23,6 +25,7 @@ export async function getNotificationsAction() {
 }
 
 export async function getUnreadNotificationsCountAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("notifications")
       .where("isRead", "==", false)
@@ -36,6 +39,7 @@ export async function getUnreadNotificationsCountAction() {
 }
 
 export async function markNotificationAsReadAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection("notifications").doc(id).update({
       isRead: true
@@ -48,6 +52,7 @@ export async function markNotificationAsReadAction(id: string) {
 }
 
 export async function markAllNotificationsAsReadAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("notifications")
       .where("isRead", "==", false)

@@ -3,8 +3,10 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { sendNewProductLaunchEmail } from "@/lib/marketing-emails";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function createProductAction(data: any) {
+  await requireAdmin();
   try {
     const slug = data.name
       .toLowerCase()
@@ -20,7 +22,7 @@ export async function createProductAction(data: any) {
       totalStock = data.variants.reduce((acc: number, v: any) => acc + (parseInt(v.stock, 10) || 0), 0);
     }
 
-    const docData = {
+    const docData: Record<string, unknown> = {
       name: data.name.trim(),
       slug,
       description: data.description.trim(),
@@ -38,6 +40,8 @@ export async function createProductAction(data: any) {
       createdAt: now,
       updatedAt: now,
     };
+    if (data.gstRate !== undefined && data.gstRate !== "") docData.gstRate = parseFloat(data.gstRate) || 0;
+    if (data.convenienceFee !== undefined && data.convenienceFee !== "") docData.convenienceFee = parseFloat(data.convenienceFee) || 0;
 
     const docRef = await adminDb.collection("products").add(docData);
 
@@ -94,11 +98,8 @@ export async function getProductsAction() {
 }
 
 export async function deleteProductAction(id: string) {
+  await requireAdmin();
   try {
-    // Basic server-side protection - in a real app, you'd get the current user ID from session/cookies
-    // For this implementation, we assume the middleware or a wrapper handles identity
-    // await verifyPermission(currentUserId, 'products', 'delete');
-    
     await adminDb.collection("products").doc(id).delete();
     revalidatePath("/");
     revalidatePath("/products");
@@ -110,6 +111,7 @@ export async function deleteProductAction(id: string) {
 }
 
 export async function toggleProductStatusAction(id: string, currentStatus: boolean) {
+  await requireAdmin();
   try {
     await adminDb.collection("products").doc(id).update({
       isActive: !currentStatus,
@@ -140,6 +142,7 @@ export async function getProductAction(id: string) {
 }
 
 export async function updateProductAction(id: string, data: any) {
+  await requireAdmin();
   try {
     const slug = data.name
       .toLowerCase()
@@ -153,7 +156,7 @@ export async function updateProductAction(id: string, data: any) {
       totalStock = data.variants.reduce((acc: number, v: any) => acc + (parseInt(v.stock, 10) || 0), 0);
     }
 
-    const updateData = {
+    const updateData: Record<string, unknown> = {
       name: data.name.trim(),
       slug,
       description: data.description.trim(),
@@ -170,6 +173,8 @@ export async function updateProductAction(id: string, data: any) {
       variants: data.variants || [],
       updatedAt: Date.now(),
     };
+    if (data.gstRate !== undefined && data.gstRate !== "") updateData.gstRate = parseFloat(data.gstRate) || 0;
+    if (data.convenienceFee !== undefined && data.convenienceFee !== "") updateData.convenienceFee = parseFloat(data.convenienceFee) || 0;
 
     await adminDb.collection("products").doc(id).update(updateData);
     revalidatePath("/");

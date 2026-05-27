@@ -1,8 +1,10 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function createCouponAction(data: any) {
+  await requireAdmin();
   try {
     const docData = {
       ...data,
@@ -20,6 +22,7 @@ export async function createCouponAction(data: any) {
 }
 
 export async function updateCouponAction(id: string, data: any) {
+  await requireAdmin();
   try {
     const docData = { ...data };
     if (docData.id) delete docData.id;
@@ -32,6 +35,7 @@ export async function updateCouponAction(id: string, data: any) {
 }
 
 export async function getCouponsAction() {
+  await requireAdmin();
   try {
     const snapshot = await adminDb.collection("coupons").get();
     const coupons = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -43,6 +47,7 @@ export async function getCouponsAction() {
 }
 
 export async function deleteCouponAction(id: string) {
+  await requireAdmin();
   try {
     await adminDb.collection("coupons").doc(id).delete();
     return { success: true };
