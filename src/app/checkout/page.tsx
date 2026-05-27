@@ -56,7 +56,7 @@ export default function CheckoutPage() {
     return appliedCoupon.value;
   }, [appliedCoupon, subtotal]);
 
-  const shippingAmount = (subtotal - discountAmount) > 12000 ? 0 : 150;
+  const shippingAmount = 0;
 
   const gstAmount = useMemo(() => {
     return items.reduce((sum, item) => {
@@ -515,10 +515,6 @@ export default function CheckoutPage() {
                           <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between tracking-widest uppercase text-[10px]">
-                        <span className="text-zinc-400">Global Logistics</span>
-                        <span className="font-bold text-zinc-800">{shippingAmount === 0 ? "Complimentary" : `₹${shippingAmount.toFixed(2)}`}</span>
-                      </div>
                       {gstAmount > 0 && (
                         <div className="flex justify-between tracking-widest uppercase text-[10px]">
                           <span className="text-zinc-400">GST</span>

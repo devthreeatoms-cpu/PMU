@@ -113,7 +113,7 @@ export async function POST(req: Request) {
 
     // 3. Shipping & Tax
     const finalSubtotal = Math.max(0, subtotal - couponDiscountAmount);
-    const shipping = finalSubtotal > 12000 ? 0 : 150;
+    const shipping = 0;
     const tax = finalSubtotal * 0.08;
     const total = Math.round((finalSubtotal + shipping + tax) * 100) / 100;
 
