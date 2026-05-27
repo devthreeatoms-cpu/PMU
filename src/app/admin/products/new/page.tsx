@@ -258,7 +258,7 @@ export default function AddProductPage() {
                      <Label htmlFor="gstRate">GST Rate (%)</Label>
                      <Select
                        value={formData.gstRate}
-                       onValueChange={(val) => setFormData({...formData, gstRate: val})}
+                       onValueChange={(val) => setFormData({...formData, gstRate: val ?? ""})}
                      >
                        <SelectTrigger id="gstRate">
                          <SelectValue placeholder="Select GST rate" />
