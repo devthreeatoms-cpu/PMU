@@ -303,7 +303,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <Label htmlFor="gstRate" className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">GST Rate (%)</Label>
                     <Select
                       value={formData.gstRate}
-                      onValueChange={(val) => setFormData({...formData, gstRate: val})}
+                      onValueChange={(val) => setFormData({...formData, gstRate: val ?? ""})}
                     >
                       <SelectTrigger id="gstRate" className="h-12 bg-zinc-50/50 border-zinc-100 text-xs">
                         <SelectValue placeholder="Select GST rate" />
