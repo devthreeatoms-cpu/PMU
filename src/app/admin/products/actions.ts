@@ -61,7 +61,7 @@ export async function createProductAction(data: any) {
             id: docRef.id,
             name: docData.name,
             description: docData.description,
-            image: docData.imageUrls[0] || null
+            image: (docData.imageUrls as string[])[0] || null
           });
         }
       } else {
