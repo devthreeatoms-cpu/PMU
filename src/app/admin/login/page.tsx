@@ -112,13 +112,13 @@ export default function AdminLoginPage() {
           </div>
 
           <div className="flex flex-col items-center w-full -mt-10">
-            <div className="relative h-32 w-full max-w-[320px] md:h-56 md:max-w-[600px] transform transition-transform duration-700 hover:scale-[1.02]">
-              <Image 
-                src="/images/logo4.png" 
-                alt="PMU SUPPLY" 
+            <div className="relative h-32 w-full max-w-[360px] md:h-44 md:max-w-[520px] transform transition-transform duration-700 hover:scale-[1.02]">
+              <Image
+                src="/images/logo-horizontal.png"
+                alt="PMU Supplies India"
                 fill
-                className="object-contain brightness-[1.05] contrast-[1.15]"
-                style={{ imageRendering: "-webkit-optimize-contrast" }}
+                sizes="(max-width: 768px) 360px, 520px"
+                className="object-contain"
                 quality={100}
                 priority
               />

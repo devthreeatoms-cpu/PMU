@@ -62,14 +62,14 @@ export function Footer() {
           {/* Brand Column: The Manifesto & Social Presence */}
           <div className="lg:col-span-5 flex flex-col items-start space-y-4 text-left">
             <div className="flex flex-col items-start space-y-0 w-full">
-              <Link href="/" className="inline-block transform transition-transform hover:scale-105 duration-500">
-                <div className="relative h-14 md:h-16 w-44 md:w-52">
+              <Link href="/" className="inline-block transform transition-transform hover:scale-[1.03] duration-500" aria-label="PMU Supplies India - Home">
+                <div className="relative h-20 md:h-24 w-64 md:w-80">
                   <Image
-                    src="/images/logo4.png"
-                    alt="PMU SUPPLY"
+                    src="/images/logo-horizontal.png"
+                    alt="PMU Supplies India"
                     fill
-                    className="object-contain object-left mix-blend-multiply brightness-[1.02] contrast-[1.1]"
-                    style={{ imageRendering: "-webkit-optimize-contrast" }}
+                    sizes="(max-width: 768px) 256px, 320px"
+                    className="object-contain object-left mix-blend-multiply"
                     quality={100}
                     priority
                   />

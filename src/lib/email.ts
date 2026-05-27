@@ -2,7 +2,15 @@ import { Resend } from "resend";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error("RESEND_API_KEY is not configured");
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
 const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
@@ -61,7 +69,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [userEmail],
       subject: "Welcome to PMU SUPPLY | Your Artist Initiation Inside",
@@ -87,7 +95,7 @@ export async function sendEmailVerification(userEmail: string, verificationUrl: 
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [userEmail],
       subject: "Verify your PMU SUPPLY identity",
@@ -158,7 +166,7 @@ export async function sendOrderConfirmationEmail(order: any) {
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [shippingAddress.email],
       subject: `Order Confirmed | PMU SUPPLY #${id}`,
@@ -328,7 +336,7 @@ export async function sendInvoiceEmail(order: any) {
       ];
     }
 
-    await resend.emails.send(emailOptions);
+    await getResend().emails.send(emailOptions);
     return { success: true };
   } catch (error) {
     console.error("Resend Order Update Error:", error);
@@ -382,7 +390,7 @@ export async function sendOrderStatusUpdateEmail(order: any) {
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [shippingAddress.email],
       subject: `Order Update | Your PMU SUPPLY Package is ${statusUpper}`,
@@ -413,7 +421,7 @@ export async function sendRefundConfirmationEmail(order: any, amount: number) {
   `;
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to: [order.shippingAddress.email],
       subject: `Refund Processed | PMU SUPPLY Order #${order.id}`,

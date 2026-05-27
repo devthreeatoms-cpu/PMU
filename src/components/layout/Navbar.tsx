@@ -106,29 +106,34 @@ export function Navbar() {
           </div>
         )}
 
-        <div className="w-full px-4 md:px-12">
+        <div className="w-full px-4 md:px-10 xl:px-14">
           {/* Row 1: Logo and Action Icons */}
-          <div className="flex items-center justify-between h-16 md:h-20 relative">
-            {/* Left: Mobile Toggler (Mobile Only) */}
-            <div className="flex-none lg:hidden z-30">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center h-24 md:h-36 gap-4">
+            {/* Left: Mobile Toggler (Mobile) / Spacer (Desktop) */}
+            <div className="flex items-center justify-start lg:w-32">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-1 hover:bg-zinc-100 rounded-md transition-colors text-brand-black"
+                className="lg:hidden p-1.5 hover:bg-zinc-100 rounded-md transition-colors text-brand-black"
+                aria-label="Open menu"
               >
                 <MenuIcon className="h-6 w-6" />
               </button>
             </div>
 
             {/* Center: Logo */}
-            <div className="flex-1 flex justify-center z-20">
-              <Link href={user ? "/products" : "/"} className="block group transition-all duration-300 hover:scale-105">
-                <div className="relative h-12 w-40 md:h-14 md:w-48">
+            <div className="flex justify-center">
+              <Link
+                href="/"
+                className="block group transition-transform duration-300 hover:scale-[1.02]"
+                aria-label="PMU Supplies India - Home"
+              >
+                <div className="relative h-20 w-64 md:h-32 md:w-[26rem]">
                   <Image
-                    src="/images/logo4.png"
-                    alt="PMU SUPPLY"
+                    src="/images/logo-horizontal.png"
+                    alt="PMU Supplies India"
                     fill
-                    className="object-contain brightness-[1.05] contrast-[1.1] transition-all duration-500"
-                    style={{ imageRendering: "-webkit-optimize-contrast" }}
+                    sizes="(max-width: 768px) 256px, 416px"
+                    className="object-contain"
                     quality={100}
                     priority
                   />
@@ -137,23 +142,29 @@ export function Navbar() {
             </div>
 
             {/* Right: Action Icons */}
-            <div className="flex-none flex items-center justify-end gap-0.5 md:gap-4 z-30">
-              <button onClick={() => setIsSearchOpen(true)} className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
-                <SearchIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
+            <div className="flex items-center justify-end gap-1 md:gap-2 lg:w-32">
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 rounded-full hover:bg-brand-rose/40 text-brand-black hover:text-brand-gold transition-all duration-200"
+                aria-label="Search"
+              >
+                <SearchIcon className="h-5 w-5" />
               </button>
-              {user ? (
-                <Link href="/profile" className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
-                  <UserIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
-                </Link>
-              ) : (
-                <Link href="/login" className="p-1 md:p-2 hover:text-brand-gold transition-colors group">
-                  <UserIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
-                </Link>
-              )}
-              <button onClick={() => setIsOpen(true)} className="relative p-1 md:p-2 hover:text-brand-gold transition-colors group">
-                <CartIcon className="h-5 w-5 md:h-5 md:w-5 group-hover:scale-110 transition-transform" />
+              <Link
+                href={user ? "/profile" : "/login"}
+                className="p-2 rounded-full hover:bg-brand-rose/40 text-brand-black hover:text-brand-gold transition-all duration-200"
+                aria-label={user ? "My account" : "Sign in"}
+              >
+                <UserIcon className="h-5 w-5" />
+              </Link>
+              <button
+                onClick={() => setIsOpen(true)}
+                className="relative p-2 rounded-full hover:bg-brand-rose/40 text-brand-black hover:text-brand-gold transition-all duration-200"
+                aria-label="Open cart"
+              >
+                <CartIcon className="h-5 w-5" />
                 {mounted && getCartCount() > 0 && (
-                  <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-brand-gold text-white text-[8px] md:text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-brand-gold text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
                     {getCartCount()}
                   </span>
                 )}
@@ -162,18 +173,31 @@ export function Navbar() {
           </div>
 
           {/* Row 2: Navigation Links */}
-          <nav className="hidden lg:flex flex-wrap items-center justify-center gap-x-8 gap-y-4 py-4 border-t border-zinc-50 relative z-30">
-            <Link href="/products" className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase">Shop All</Link>
+          <nav className="hidden lg:flex items-center justify-center gap-x-1 xl:gap-x-2 py-3 border-t border-zinc-100 relative z-30">
+            <Link
+              href="/products"
+              className="group relative px-3 py-2 text-[11px] font-semibold tracking-[0.18em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase"
+            >
+              Shop All
+              <span className="absolute left-3 right-3 -bottom-0.5 h-px bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform origin-center" />
+            </Link>
             {categories.map((cat: any) => (
               <Link
                 key={cat.id}
                 href={`/products?category=${slugify(cat.name)}`}
-                className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase"
+                className="group relative px-3 py-2 text-[11px] font-semibold tracking-[0.18em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase"
               >
                 {cat.displayName || cat.name}
+                <span className="absolute left-3 right-3 -bottom-0.5 h-px bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform origin-center" />
               </Link>
             ))}
-            <Link href="/pages/contact" className="text-[11px] font-bold tracking-[0.2em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase">Contact</Link>
+            <Link
+              href="/pages/contact"
+              className="group relative px-3 py-2 text-[11px] font-semibold tracking-[0.18em] text-zinc-800 hover:text-brand-gold transition-colors whitespace-nowrap uppercase"
+            >
+              Contact
+              <span className="absolute left-3 right-3 -bottom-0.5 h-px bg-brand-gold scale-x-0 group-hover:scale-x-100 transition-transform origin-center" />
+            </Link>
           </nav>
         </div>
       </header>
@@ -183,12 +207,13 @@ export function Navbar() {
         <div className="fixed inset-0 z-[200] lg:hidden bg-brand-cream animate-in slide-in-from-left duration-300 overflow-y-auto">
           <div className="container mx-auto px-4 py-6 flex flex-col gap-8 pb-20">
             <div className="flex items-center justify-between border-b border-brand-gold/10 pb-4">
-              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block">
-                <div className="relative h-12 w-40">
-                  <Image 
-                    src="/images/logo4.png" 
-                    alt="PMU SUPPLY" 
+              <Link href="/" onClick={() => setMobileMenuOpen(false)} className="block" aria-label="PMU Supplies India - Home">
+                <div className="relative h-20 w-52">
+                  <Image
+                    src="/images/logo-horizontal.png"
+                    alt="PMU Supplies India"
                     fill
+                    sizes="208px"
                     className="object-contain"
                     quality={100}
                   />
