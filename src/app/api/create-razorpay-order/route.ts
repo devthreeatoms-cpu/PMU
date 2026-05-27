@@ -10,18 +10,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Empty cart" }, { status: 400 });
     }
 
-    // 1. Calculate Subtotal & Discount
+    // 1. Calculate Subtotal, GST & Convenience Fees
     let subtotal = 0;
+    let gstAmount = 0;
+    let convenienceFeeTotal = 0;
     const orderItems = [];
-    
+
     for (const item of items) {
       const productDoc = await adminDb.collection("products").doc(item.product.id).get();
       if (!productDoc.exists) continue;
-      
+
       const productData = productDoc.data();
       let priceAtPurchase = productData?.salePrice ?? productData?.price;
       let variantName = "";
-      
+
       if (item.variantId && productData?.variants) {
         const variant = productData.variants.find((v: any) => v.id === item.variantId);
         if (variant) {
@@ -29,9 +31,11 @@ export async function POST(req: Request) {
           variantName = Object.values(variant.combination || {}).join(' / ');
         }
       }
-      
+
       const itemTotal = priceAtPurchase * item.quantity;
       subtotal += itemTotal;
+      gstAmount += priceAtPurchase * item.quantity * ((productData?.gstRate ?? 0) / 100);
+      convenienceFeeTotal += (productData?.convenienceFee ?? 0) * item.quantity;
 
       orderItems.push({
         productId: item.product.id,
@@ -111,11 +115,10 @@ export async function POST(req: Request) {
     console.log("[RazorpayAPI] Final Totals:", { subtotal, couponDiscountAmount, finalSubtotal: subtotal - couponDiscountAmount });
 
 
-    // 3. Shipping & Tax
+    // 3. Shipping & Total
     const finalSubtotal = Math.max(0, subtotal - couponDiscountAmount);
     const shipping = 0;
-    const tax = finalSubtotal * 0.08;
-    const total = Math.round((finalSubtotal + shipping + tax) * 100) / 100;
+    const total = Math.round((finalSubtotal + shipping + gstAmount + convenienceFeeTotal) * 100) / 100;
 
     // 4. Create Razorpay Order
     const amountInCents = Math.round(total * 100);
@@ -136,7 +139,9 @@ export async function POST(req: Request) {
       discountAmount: couponDiscountAmount,
       couponDiscountAmount: couponDiscountAmount,
       shippingAmount: shipping,
-      taxAmount: tax,
+      gstAmount: gstAmount,
+      convenienceFeeTotal: convenienceFeeTotal,
+      taxAmount: gstAmount,
       total: total,
       couponId: couponId,
       couponCode: resolvedCouponCode,

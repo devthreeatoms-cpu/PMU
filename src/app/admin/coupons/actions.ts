@@ -46,6 +46,28 @@ export async function getCouponsAction() {
   }
 }
 
+export async function getActiveCouponsAction() {
+  try {
+    const snapshot = await adminDb.collection("coupons")
+      .where("isActive", "==", true)
+      .get();
+    const now = Date.now();
+    const coupons = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((c: any) => {
+        const expiryMs = c.expiryDate
+          ? typeof c.expiryDate === 'number'
+            ? c.expiryDate
+            : c.expiryDate.toMillis?.() ?? 0
+          : 0;
+        return expiryMs === 0 || expiryMs > now;
+      });
+    return { success: true, coupons };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to fetch coupons" };
+  }
+}
+
 export async function deleteCouponAction(id: string) {
   await requireAdmin();
   try {

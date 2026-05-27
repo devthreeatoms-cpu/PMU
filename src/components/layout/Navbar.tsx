@@ -18,7 +18,7 @@ import { SearchOverlay } from "./SearchOverlay";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { getCategoriesAction } from "@/app/admin/products/category-actions";
-import { getCouponsAction } from "@/app/admin/coupons/actions";
+import { getActiveCouponsAction } from "@/app/admin/coupons/actions";
 import { useRouter } from "next/navigation";
 
 export function Navbar() {
@@ -36,7 +36,7 @@ export function Navbar() {
     async function loadData() {
       const [catRes, coupRes] = await Promise.all([
         getCategoriesAction(),
-        getCouponsAction()
+        getActiveCouponsAction()
       ]);
 
       if (catRes.success && catRes.categories) {
@@ -52,18 +52,9 @@ export function Navbar() {
       }
 
       if (coupRes.success && coupRes.coupons) {
-        const now = Date.now();
         const descriptions = Array.from(new Set(
           coupRes.coupons
-            .filter((c: any) => {
-              const expiryMs = c.expiryDate
-                ? typeof c.expiryDate === 'number'
-                  ? c.expiryDate
-                  : c.expiryDate.toMillis?.() ?? 0
-                : 0;
-              const isNotExpired = expiryMs === 0 || expiryMs > now;
-              return c.isActive && isNotExpired && c.description;
-            })
+            .filter((c: any) => c.description)
             .map((c: any) => c.description.trim())
         ));
 

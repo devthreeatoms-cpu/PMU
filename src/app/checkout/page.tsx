@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +29,12 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [razorpayOrder, setRazorpayOrder] = useState<any>(null);
   const [finalPaymentDetails, setFinalPaymentDetails] = useState<{orderId: string, paymentId: string} | null>(null);
+  const paidItemsRef = useRef<typeof items | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     email: user?.email || "",
     firstName: "",
@@ -46,8 +46,14 @@ export default function CheckoutPage() {
     phone: ""
   });
 
+  useEffect(() => {
+    if (user?.email && !formData.email) {
+      setFormData(prev => ({ ...prev, email: user.email! }));
+    }
+  }, [user]);
+
   const subtotal = getCartTotal();
-  
+
   const discountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'percentage') {
@@ -104,10 +110,11 @@ export default function CheckoutPage() {
 
 
   const handlePaymentSuccess = () => {
+    paidItemsRef.current = [...items];
     setStep(3);
     clearCart();
     toast.success("Payment Received. Your PMU SUPPLY package is being prepared.");
-    
+
     setTimeout(() => {
       router.push("/profile");
     }, 3000);
@@ -169,9 +176,11 @@ export default function CheckoutPage() {
               handlePaymentSuccess();
             } else {
               toast.error("Payment verification failed.");
+              setIsProcessing(false);
             }
           } catch (err) {
             toast.error("Error verifying payment.");
+            setIsProcessing(false);
           }
         },
         prefill: {
@@ -201,7 +210,6 @@ export default function CheckoutPage() {
 
     } catch (err: any) {
       toast.error(err.message || "Failed to initiate secure payment.");
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -296,8 +304,8 @@ export default function CheckoutPage() {
                         yPos += 15;
                         doc.setTextColor(0, 0, 0);
                         doc.setFontSize(9);
-                        
-                        items.forEach((item: any) => {
+
+                        (paidItemsRef.current || []).forEach((item: any) => {
                           const name = item.product.name.substring(0, 45);
                           const qty = item.quantity.toString();
                           const price = (item.product.salePrice || item.product.price).toFixed(2);
