@@ -186,6 +186,9 @@ export default function CheckoutPage() {
         }
       };
 
+      if (typeof (window as any).Razorpay === "undefined") {
+        throw new Error("Payment gateway failed to load. Please refresh the page and try again.");
+      }
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
       

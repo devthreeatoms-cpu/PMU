@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="overflow-x-hidden">
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}>
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <AuthProvider>
           {children}
           <Toaster position="top-center" richColors />
