@@ -73,6 +73,7 @@ export async function createProductAction(data: any) {
 
     revalidatePath("/");
     revalidatePath("/products");
+    revalidatePath(`/products/${docRef.id}`);
     return { success: true, id: docRef.id };
   } catch (err: any) {
     console.error("Server Action Error (createProduct):", err);
@@ -103,6 +104,7 @@ export async function deleteProductAction(id: string) {
     await adminDb.collection("products").doc(id).delete();
     revalidatePath("/");
     revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (deleteProduct):", err);
@@ -119,6 +121,7 @@ export async function toggleProductStatusAction(id: string, currentStatus: boole
     });
     revalidatePath("/");
     revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (toggleProductStatus):", err);
@@ -179,6 +182,7 @@ export async function updateProductAction(id: string, data: any) {
     await adminDb.collection("products").doc(id).update(updateData);
     revalidatePath("/");
     revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
     return { success: true };
   } catch (err: any) {
     console.error("Server Action Error (updateProduct):", err);
