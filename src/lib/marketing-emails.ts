@@ -1,6 +1,16 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazily construct the client. `new Resend(undefined)` throws at construction,
+// so building it at module scope would crash every importer (e.g. product
+// creation) when RESEND_API_KEY is unset — even though email is best-effort.
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!_resend) _resend = new Resend(apiKey);
+  return _resend;
+}
+
 const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
@@ -55,6 +65,12 @@ export async function sendNewProductLaunchEmail(emails: string[], product: any) 
     </div>
   `;
 
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not configured — skipping new product launch email.");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
   try {
     // Note: Resend allows sending to multiple recipients at once
     await resend.emails.send({
@@ -93,6 +109,12 @@ export async function sendSaleAnnouncementEmail(emails: string[], saleName: stri
     </div>
   `;
 
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not configured — skipping sale announcement email.");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
   try {
     await resend.emails.send({
       from: FROM_EMAIL,
@@ -125,6 +147,12 @@ export async function sendFlashSaleEmail(emails: string[], duration: string, dis
       <a href="${BASE_URL}/products" style="background-color: #C9A84C; color: #000; padding: 20px 45px; text-decoration: none; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; display: inline-block; border-radius: 4px;">Claim Your Assets</a>
     </div>
   `;
+
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY not configured — skipping flash sale email.");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
 
   try {
     await resend.emails.send({

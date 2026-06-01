@@ -6,8 +6,8 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function createProductAction(data: any) {
-  await requireAdmin();
   try {
+    await requireAdmin();
     const slug = data.name
       .toLowerCase()
       .trim()
@@ -98,8 +98,8 @@ export async function getProductsAction() {
 }
 
 export async function deleteProductAction(id: string) {
-  await requireAdmin();
   try {
+    await requireAdmin();
     await adminDb.collection("products").doc(id).delete();
     revalidatePath("/");
     revalidatePath("/products");
@@ -111,8 +111,8 @@ export async function deleteProductAction(id: string) {
 }
 
 export async function toggleProductStatusAction(id: string, currentStatus: boolean) {
-  await requireAdmin();
   try {
+    await requireAdmin();
     await adminDb.collection("products").doc(id).update({
       isActive: !currentStatus,
       updatedAt: Date.now()
@@ -142,8 +142,8 @@ export async function getProductAction(id: string) {
 }
 
 export async function updateProductAction(id: string, data: any) {
-  await requireAdmin();
   try {
+    await requireAdmin();
     const slug = data.name
       .toLowerCase()
       .trim()
