@@ -212,7 +212,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     doc.setFont("helvetica", "normal");
     doc.setTextColor(150, 150, 150);
     doc.text("Thank you for your purchase from PMU SUPPLY.", 105, 280, { align: "center" });
-    doc.text("For professional support, contact help@pmusupply.com", 105, 285, { align: "center" });
+    doc.text("For professional support, contact support@pmusupplies.in", 105, 285, { align: "center" });
 
     doc.save(`Invoice_${order.id}.pdf`);
   };

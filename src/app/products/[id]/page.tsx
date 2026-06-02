@@ -103,7 +103,7 @@ export default async function ProductDetailPage({
     },
     offers: {
       "@type": "Offer",
-      url: `https://www.pmusupply.com/products/${product.id}`,
+      url: `https://www.pmusupplies.in/products/${product.id}`,
       priceCurrency: "INR",
       price: product.salePrice && product.salePrice > 0 ? product.salePrice : product.price,
       availability:

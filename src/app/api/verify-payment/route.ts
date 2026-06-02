@@ -1,149 +1,47 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
-import { sendOrderConfirmationEmail, sendInvoiceEmail } from "@/lib/email";
-import { createAdminNotification } from "@/lib/notifications";
+import { fulfillPaidOrder } from "@/lib/fulfill-order";
 
-
+/**
+ * Browser-initiated payment verification (Razorpay checkout `handler`).
+ * Verifies the checkout signature, then delegates fulfillment to the shared
+ * idempotent helper. This is the "instant UX" path; the webhook at
+ * /api/razorpay-webhook is the reliability backstop that catches any payment
+ * whose browser callback never fired.
+ */
 export async function POST(req: Request) {
   try {
-    const { 
-      razorpay_order_id, 
-      razorpay_payment_id, 
-      razorpay_signature 
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
     } = await req.json();
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return NextResponse.json({ verified: false, error: "Missing payment fields" }, { status: 400 });
+    }
 
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      console.error("verify-payment: RAZORPAY_KEY_SECRET is not set");
+      return NextResponse.json({ verified: false, error: "Payment gateway not configured" }, { status: 500 });
+    }
+
+    // Razorpay checkout signature = HMAC_SHA256(order_id + "|" + payment_id, key_secret)
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-      .update(body.toString())
+      .createHmac("sha256", secret)
+      .update(body)
       .digest("hex");
 
-    const isMatch = expectedSignature === razorpay_signature;
-
-    if (isMatch) {
-      // 1. Get the order document
-      const orderRef = adminDb.collection("orders").doc(razorpay_order_id);
-      const orderSnap = await orderRef.get();
-      
-      if (!orderSnap.exists) {
-        return NextResponse.json({ error: "Order context lost" }, { status: 404 });
-      }
-
-      const orderData = orderSnap.data();
-
-      // 2. Only process if not already paid
-      if (orderData && orderData.status === 'pending') {
-        const userId = orderData.userId;
-        const items = orderData.items || [];
-        
-        // 3. Begin Transaction for Stock Deduction & Status Update
-        await adminDb.runTransaction(async (transaction) => {
-          // A. Deduct Stock for each item (including variants)
-          for (const item of items) {
-            if (item.productId) {
-              const productRef = adminDb.collection("products").doc(item.productId);
-              const productSnap = await transaction.get(productRef);
-              
-              if (productSnap.exists) {
-                const pData = productSnap.data()!;
-                let mainStock = Number(pData.stock || 0) - (item.quantity || 1);
-                let variants = pData.variants || [];
-
-                // If it's a variant purchase, deduct from that specific variant's stock
-                if (item.variantId && Array.isArray(variants)) {
-                  variants = variants.map((v: any) => {
-                    if (v.id === item.variantId) {
-                      return { ...v, stock: Math.max(0, Number(v.stock || 0) - (item.quantity || 1)) };
-                    }
-                    return v;
-                  });
-                }
-
-                transaction.update(productRef, {
-                  stock: Math.max(0, mainStock),
-                  variants: variants,
-                  updatedAt: Date.now()
-                });
-              }
-            }
-          }
-
-          // B. Update User Record
-          if (userId && userId !== "guest") {
-            const userRef = adminDb.collection("users").doc(userId);
-            transaction.update(userRef, { hasOrderedBefore: true });
-          }
-
-          // C. Increment Coupon Usage
-          // Prefer couponId (direct doc ref) — avoids case-mismatch on code field
-          if (orderData.couponId) {
-            const couponRef = adminDb.collection("coupons").doc(orderData.couponId);
-            transaction.update(couponRef, { usageCount: FieldValue.increment(1) });
-          } else if (orderData.couponCode) {
-            // Fallback: query by code (normalised to uppercase)
-            const code = (orderData.couponCode as string).toUpperCase().trim();
-            const couponSnapshot = await adminDb.collection("coupons")
-              .where("code", "==", code)
-              .limit(1)
-              .get();
-            if (!couponSnapshot.empty) {
-              transaction.update(couponSnapshot.docs[0].ref, {
-                usageCount: FieldValue.increment(1),
-              });
-            }
-          }
-
-          // D. Finalize Order Status
-          transaction.update(orderRef, {
-            status: 'paid',
-            razorpayPaymentId: razorpay_payment_id,
-            updatedAt: Date.now(),
-            paymentVerifiedAt: Date.now()
-          });
-        });
-
-        // Create admin notification
-        await createAdminNotification({
-          type: "order",
-          title: "New Order Booked",
-          message: `Order #${razorpay_order_id} has been paid successfully. Total: ₹${orderData.total}`,
-          link: `/admin/orders`
-        });
-
-        // 4. Send Confirmation Emails (Async, non-blocking for response)
-        try {
-          const emailData = {
-            id: razorpay_order_id,
-            total: orderData.total,
-            subtotal: orderData.subtotal,
-            taxAmount: orderData.taxAmount,
-            shippingAmount: orderData.shippingAmount,
-            discountAmount: orderData.discountAmount || orderData.couponDiscountAmount || 0,
-            items: orderData.items,
-            shippingAddress: orderData.shippingAddress,
-            razorpayPaymentId: razorpay_payment_id,
-            paymentVerifiedAt: Date.now()
-          };
-
-          // Send Order Confirmation
-          await sendOrderConfirmationEmail(emailData);
-          
-          // Send Official Invoice
-          await sendInvoiceEmail(emailData);
-          
-        } catch (emailErr) {
-          console.error("Failed to send order/invoice emails:", emailErr);
-        }
-
-      }
-
-      return NextResponse.json({ verified: true });
-    } else {
+    if (expectedSignature !== razorpay_signature) {
       return NextResponse.json({ verified: false }, { status: 400 });
     }
+
+    // Signature valid — fulfill (idempotent; safe even if the webhook beat us to it).
+    await fulfillPaidOrder(razorpay_order_id, razorpay_payment_id);
+
+    return NextResponse.json({ verified: true });
   } catch (error: any) {
     console.error("Verification Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

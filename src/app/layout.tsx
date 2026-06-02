@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "PMU SUPPLY - Elite Permanent Makeup Products",
   description: "We strive to offer only the best quality products for PMU and skin care. Our products have been tested by professionals, and are 100% vegan, organic, and cruelty free.",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.pmusupply.com"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.pmusupplies.in"
   ),
 };
 

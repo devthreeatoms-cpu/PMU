@@ -156,7 +156,7 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Input
                   type="email"
-                  placeholder="admin@pmusupply.com"
+                  placeholder="admin@pmusupplies.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
