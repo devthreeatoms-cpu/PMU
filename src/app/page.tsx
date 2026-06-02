@@ -35,9 +35,8 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh so admin price/stock edits reflect immediately on the
-// home page (Featured Products). ISR `revalidate = 60` served a stale price.
-export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds (ISR)
+export const revalidate = 60;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

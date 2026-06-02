@@ -71,7 +71,13 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
     );
   }, [product, selectedOptions]);
 
-  const currentPrice = currentVariant ? currentVariant.price : product.price || 0;
+  // Honor sale pricing the same way the grid and cart do: salePrice wins when set.
+  // `regularPrice` is the original (struck-through) value; `currentPrice` is what
+  // the customer actually pays.
+  const regularPrice = currentVariant ? currentVariant.price : product.price || 0;
+  const salePrice = currentVariant ? currentVariant.salePrice : product.salePrice;
+  const hasSale = typeof salePrice === "number" && salePrice > 0;
+  const currentPrice = hasSale ? (salePrice as number) : regularPrice;
   const currentStock = currentVariant ? currentVariant.stock : product.stock || 0;
   const isOutOfStock = currentStock <= 0;
 
@@ -221,9 +227,11 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
                 {product.name}
               </h1>
               <div className="flex items-baseline gap-4 pt-2">
-                <span className="text-2xl font-light text-zinc-900">₹{currentPrice.toFixed(2)}</span>
-                {currentVariant && currentVariant.salePrice && (
-                  <span className="text-sm line-through text-zinc-400">₹{currentVariant.salePrice.toFixed(2)}</span>
+                <span className={`text-2xl font-light ${hasSale ? "text-green-600" : "text-zinc-900"}`}>
+                  ₹{currentPrice.toFixed(2)}
+                </span>
+                {hasSale && (
+                  <span className="text-sm line-through text-zinc-400">₹{regularPrice.toFixed(2)}</span>
                 )}
                 <span className="text-[9px] font-bold tracking-widest text-zinc-400 uppercase opacity-60">
                   {isOutOfStock ? "Out of Stock" : "Professional Distribution"}
@@ -231,7 +239,7 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
               </div>
               <div className="pt-2">
                 <p className="text-[10px] text-zinc-500 font-light italic">
-                  Or 4 interest-free installments of ₹{(product.price / 4).toFixed(2)} with{" "}
+                  Or 4 interest-free installments of ₹{(currentPrice / 4).toFixed(2)} with{" "}
                   <span className="font-bold text-brand-gold">PMU Pay</span>
                 </p>
               </div>
