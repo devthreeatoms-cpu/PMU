@@ -49,19 +49,12 @@ export async function generateMetadata({
   };
 }
 
-// ─── Pre-render all product pages at build time (ISR for new products) ───────
-
-export async function generateStaticParams() {
-  try {
-    const products = await getAllProductsServer();
-    return products.map((p) => ({ id: p.id }));
-  } catch {
-    return [];
-  }
-}
-
-// Enable ISR — revalidate product pages every 60 seconds
-export const revalidate = 60;
+// ─── Always render fresh so admin price/stock edits reflect immediately ──────
+// Previously this page used ISR (`revalidate = 60`) + `generateStaticParams`,
+// which served a stale cached price. On-demand `revalidatePath` was not reliably
+// purging it, so prices could stay stale indefinitely. Rendering dynamically
+// reads live Firestore on every request — the price is always current.
+export const dynamic = "force-dynamic";
 
 // ─── Server Component Page ───────────────────────────────────────────────────
 

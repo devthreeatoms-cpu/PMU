@@ -50,8 +50,9 @@ export async function generateMetadata({
   };
 }
 
-// Revalidate every 60 seconds (ISR)
-export const revalidate = 60;
+// Always render fresh so admin price/stock edits reflect immediately on the grid.
+// (ISR `revalidate = 60` served a stale cached price that wasn't being purged.)
+export const dynamic = "force-dynamic";
 
 // ─── Server Component Page ───────────────────────────────────────────────────
 
