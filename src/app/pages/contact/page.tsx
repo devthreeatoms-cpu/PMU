@@ -73,15 +73,27 @@ export default function ContactPage() {
                   />
                   <ContactItem
                     icon={<Phone className="w-5 h-5" />}
-                    label="Customer Care"
-                    value="+91 73309 09977"
-                    href="tel:+917330909977"
+                    label="PMU Supplies"
+                    value="+91 72073 72067"
+                    href="tel:+917207372067"
+                  />
+                  <ContactItem
+                    icon={<Phone className="w-5 h-5" />}
+                    label="Academy & Eyebrow Services"
+                    value="+91 73373 32567"
+                    href="tel:+917337332567"
+                  />
+                  <ContactItem
+                    icon={<Phone className="w-5 h-5" />}
+                    label="Salon Services"
+                    value="+91 73373 31567"
+                    href="tel:+917337331567"
                   />
                   <ContactItem
                     icon={<MessageCircle className="w-5 h-5" />}
                     label="WhatsApp"
-                    value="+91 73309 09977"
-                    href="https://wa.me/917330909977"
+                    value="+91 72073 72067"
+                    href="https://wa.me/917207372067"
                   />
                   <ContactItem
                     icon={<MapPin className="w-5 h-5" />}

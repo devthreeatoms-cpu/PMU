@@ -89,13 +89,21 @@ export function Footer() {
                 <Mail size={14} />
                 pmusuppliesindia@gmail.com
               </a>
-              <a href="tel:+917330909977" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
+              <a href="tel:+917207372067" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
                 <Phone size={14} />
-                +91 73309 09977
+                <span><span className="text-zinc-500 font-medium">PMU Supplies:</span> +91 72073 72067</span>
               </a>
-              <a href="https://wa.me/917330909977" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
+              <a href="tel:+917337332567" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
+                <Phone size={14} />
+                <span><span className="text-zinc-500 font-medium">Academy &amp; Eyebrow Services:</span> +91 73373 32567</span>
+              </a>
+              <a href="tel:+917337331567" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
+                <Phone size={14} />
+                <span><span className="text-zinc-500 font-medium">Salon Services:</span> +91 73373 31567</span>
+              </a>
+              <a href="https://wa.me/917207372067" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-zinc-700 hover:text-brand-gold transition-colors text-[11px] font-bold tracking-widest">
                 <MessageCircle size={14} />
-                WhatsApp
+                WhatsApp: +91 72073 72067
               </a>
             </div>
 

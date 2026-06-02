@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 
 // Existing business WhatsApp number (matches Footer / Contact / policy pages).
-const WHATSAPP_NUMBER = "917330909977"; // +91 73309 09977
+const WHATSAPP_NUMBER = "917207372067"; // +91 72073 72067
 const PREFILLED_MESSAGE = "Hi PMU Supply, I have a question about your products.";
 
 const WhatsAppIcon = ({ className = "w-7 h-7" }: { className?: string }) => (
