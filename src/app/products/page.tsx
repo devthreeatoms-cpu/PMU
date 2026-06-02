@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 import { getAllProductsServer, getCategoriesServer } from "@/lib/services/server";
 import { ProductGridClient } from "@/components/products/ProductGridClient";
+import { ProductGridSkeleton } from "@/components/products/ProductCardSkeleton";
 
 // ─── Per-page metadata ───────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ export default async function ProductsPage() {
           It receives the full product list from the server so the initial render
           (what Google crawls) contains real product data.
         */}
-        <Suspense fallback={<div className="py-20 text-center">Loading collection...</div>}>
+        <Suspense fallback={<ProductGridSkeleton count={12} />}>
           <ProductGridClient
             initialProducts={activeProducts}
             initialCategories={categoriesResult}
