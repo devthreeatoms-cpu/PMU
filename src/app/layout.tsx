@@ -22,6 +22,7 @@ export const viewport: Viewport = {
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { WhatsAppWidget } from "@/components/layout/WhatsAppWidget";
 
 export default function RootLayout({
   children,
@@ -35,6 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster position="top-center" richColors />
+          <WhatsAppWidget />
         </AuthProvider>
       </body>
     </html>
