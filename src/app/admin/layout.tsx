@@ -19,7 +19,8 @@ import {
   BarChart2,
   MessageSquare,
   Bell,
-  Mail
+  Mail,
+  Truck
 } from "lucide-react";
 import { AdminGuard } from "@/components/auth/AdminGuard";
 import { usePathname, useRouter } from "next/navigation";
@@ -61,6 +62,7 @@ export default function AdminLayout({
     { href: "/admin/banners", icon: <ImageIcon size={20} />, label: "Banners", active: pathname.startsWith("/admin/banners") },
     { href: "/admin/orders", icon: <ShoppingCart size={20} />, label: "Orders", active: pathname.startsWith("/admin/orders") },
     { href: "/admin/coupons", icon: <Ticket size={20} />, label: "Coupons", active: pathname === "/admin/coupons" },
+    { href: "/admin/shipping", icon: <Truck size={20} />, label: "Shipping", active: pathname.startsWith("/admin/shipping") },
     { href: "/admin/users", icon: <Users size={20} />, label: "Users", active: pathname === "/admin/users" },
     { href: "/admin/reviews", icon: <MessageSquare size={20} />, label: "Reviews", active: pathname.startsWith("/admin/reviews") },
     { href: "/admin/design", icon: <LayoutTemplate size={20} />, label: "Design", active: pathname === "/admin/design" },

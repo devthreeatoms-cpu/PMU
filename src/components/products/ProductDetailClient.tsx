@@ -14,6 +14,7 @@ import { Product } from "@/lib/types";
 import { trackProductView, trackAddToCart } from "@/lib/analytics";
 import { useAuth } from "@/context/AuthContext";
 import { ProductReviews } from "./ProductReviews";
+import { ProductDescription } from "./ProductDescription";
 
 interface ProductDetailClientProps {
   product: Product;
@@ -245,8 +246,11 @@ export function ProductDetailClient({ product, recommended }: ProductDetailClien
               </div>
             </div>
 
-            <div className="prose prose-zinc max-w-none text-zinc-500 font-light leading-relaxed text-base italic border-l-2 border-brand-gold/10 pl-6">
-              <p>{product.description}</p>
+            <div className="border-l-2 border-brand-gold/20 pl-5 md:pl-6">
+              <ProductDescription
+                description={product.description}
+                productName={product.name}
+              />
             </div>
 
             {/* Variant Switcher */}

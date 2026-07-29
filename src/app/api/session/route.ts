@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase-admin";
-import { cookies } from "next/headers";
 
 const SESSION_DURATION_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
@@ -11,28 +10,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
     }
 
+    // Verify token is valid before minting session
+    await adminAuth.verifyIdToken(idToken);
+
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
       expiresIn: SESSION_DURATION_MS,
     });
 
-    const cookieStore = await cookies();
-    cookieStore.set("__session", sessionCookie, {
-      maxAge: SESSION_DURATION_MS / 1000,
+    // Set cookie on the response object (reliable in App Router route handlers)
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set("__session", sessionCookie, {
+      maxAge: Math.floor(SESSION_DURATION_MS / 1000),
       httpOnly: true,
+      // secure only in production — localhost is http
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      sameSite: "strict",
+      // lax so cookie is sent on top-level navigations + same-site fetches/server actions
+      sameSite: "lax",
     });
-
-    return NextResponse.json({ ok: true });
+    return res;
   } catch (err: any) {
     console.error("[session] create error:", err);
-    return NextResponse.json({ error: "Failed to create session" }, { status: 401 });
+    return NextResponse.json(
+      { error: err?.message || "Failed to create session" },
+      { status: 401 }
+    );
   }
 }
 
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.delete("__session");
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set("__session", "", {
+    maxAge: 0,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "lax",
+  });
+  return res;
 }

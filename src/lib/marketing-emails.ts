@@ -11,7 +11,7 @@ function getResend(): Resend | null {
   return _resend;
 }
 
-const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
+const FROM_EMAIL = "PMU SUPPLY <pmusuppliesindia@gmail.com>";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
 /**

@@ -111,6 +111,26 @@ export interface Coupon {
   applicableCategories?: string[]; // category slugs or IDs
 }
 
+/** Site-wide shipping charge applied once per order (not per product). */
+export interface ShippingSettings {
+  /** Flat shipping fee charged on every order (₹) */
+  flatRate: number;
+  /** If order subtotal (after product discount) is >= this, shipping is free. 0 = disabled */
+  freeShippingMinOrder: number;
+  /** When false, shipping is always ₹0 */
+  isEnabled: boolean;
+  /** Optional label shown at checkout, e.g. "Standard Shipping" */
+  label?: string;
+  updatedAt?: number;
+}
+
+export const DEFAULT_SHIPPING_SETTINGS: ShippingSettings = {
+  flatRate: 0,
+  freeShippingMinOrder: 0,
+  isEnabled: true,
+  label: "Standard Shipping",
+};
+
 export interface OrderItem {
   productId: string;
   productName: string;

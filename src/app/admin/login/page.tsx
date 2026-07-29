@@ -36,8 +36,15 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // For all others, verify admin role in Firestore
+      // For all others, verify admin role in Firestore (after email-bridge sync)
       try {
+        const idToken = await loggedInUser.getIdToken();
+        await fetch("/api/auth/sync-role", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+
         const { doc, getDoc } = await import("firebase/firestore");
         const { db } = await import("@/lib/firebase");
         const userSnap = await getDoc(doc(db, "users", loggedInUser.uid));
@@ -49,7 +56,6 @@ export default function AdminLoginPage() {
           return;
         }
 
-        const idToken = await loggedInUser.getIdToken();
         const sessionRes = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
         if (!sessionRes.ok) {
           toast.error("Failed to establish secure session. Please try again.");
@@ -76,6 +82,8 @@ export default function AdminLoginPage() {
     try {
       const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
       const provider = new GoogleAuthProvider();
+      // Prefer account chooser so the correct Google email is used
+      provider.setCustomParameters({ prompt: "select_account" });
       const { user: loggedInUser } = await signInWithPopup(auth, provider);
 
       // Bootstrap bypass for owner
@@ -87,20 +95,34 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Verify admin role in Firestore
+      const idToken = await loggedInUser.getIdToken();
+
+      // Copy admin/staff role from email-password UID if this Google UID is new
+      // (same email often has two Firebase Auth users)
+      const syncRes = await fetch("/api/auth/sync-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      const syncData = syncRes.ok ? await syncRes.json() : null;
+
+      // Re-read role after sync
       const { doc, getDoc } = await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
       const userSnap = await getDoc(doc(db, "users", loggedInUser.uid));
-      const role = userSnap.data()?.role;
+      const role = userSnap.data()?.role || syncData?.role;
 
-      if (role !== "admin" && role !== "staff") {
-        toast.error("Unauthorized: Administrative access only.");
+      if (role !== "admin" && role !== "staff" && !syncData?.isAdmin) {
+        toast.error("Unauthorized: Administrative access only. Use the same email that has admin rights.");
         await auth.signOut();
         return;
       }
 
-      const idToken = await loggedInUser.getIdToken();
-      const sessionRes = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+      const sessionRes = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
       if (!sessionRes.ok) {
         toast.error("Failed to establish secure session. Please try again.");
         await auth.signOut();

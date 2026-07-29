@@ -33,10 +33,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-// jsPDF and autoTable are loaded dynamically on demand — see generateInvoice()
 import { getOrderByIdAction, updateOrderStatusAction } from "../actions";
 import { Order } from "@/lib/types";
 import { toast } from "sonner";
+import { buildInvoicePdf, getInvoiceFilename } from "@/lib/invoice";
 
 const STATUS_CONFIG: Record<string, { label: string, color: string, icon: React.ReactNode }> = {
   "pending": { label: "Pending", color: "bg-zinc-100 text-zinc-600 border-zinc-200", icon: <Clock className="w-3 h-3" /> },
@@ -85,140 +85,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const generateInvoice = async () => {
+  const generateInvoice = () => {
     if (!order) return;
-    const { default: jsPDF } = await import("jspdf");
-    const { default: autoTable } = await import("jspdf-autotable");
-    const doc = new jsPDF();
-    
-    // -- 1. Header Section --
-    // Brand Logo/Name
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(20, 20, 20);
-    doc.text("PMU SUPPLY", 15, 25);
-    
-    // Invoice Metadata (Right Aligned)
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text("INVOICE", 195, 20, { align: "right" });
-    doc.setTextColor(40, 40, 40);
-    doc.setFont("helvetica", "bold");
-    doc.text(`#${order.id}`, 195, 26, { align: "right" });
-    doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 195, 32, { align: "right" });
-    
-    // Horizontal Line
-    doc.setDrawColor(240, 240, 240);
-    doc.line(15, 45, 195, 45);
-    
-    // -- 2. Customer Section --
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(150, 150, 150);
-    doc.text("BILL TO:", 15, 55);
-    
-    doc.setTextColor(20, 20, 20);
-    doc.setFontSize(12);
-    doc.text(`${order.shippingAddress?.firstName} ${order.shippingAddress?.lastName}`, 15, 62);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    const addressLines = [
-      order.shippingAddress?.address || "",
-      `${order.shippingAddress?.city}, ${order.shippingAddress?.zipCode}`,
-      order.shippingAddress?.country || "",
-      `Phone: ${order.shippingAddress?.phone || 'N/A'}`
-    ];
-    doc.text(addressLines, 15, 68);
-    
-    // Payment Status Badge
-    doc.setFillColor(240, 250, 245); // Light green
-    doc.roundedRect(155, 50, 40, 10, 2, 2, "F");
-    doc.setTextColor(34, 197, 94); // Emerald 600
-    doc.setFont("helvetica", "bold");
-    doc.text("PAYMENT PAID", 175, 56.5, { align: "center" });
-
-    // -- 3. Items Table --
-    const tableRows = (order.items || []).map(item => [
-      { content: item.productName, styles: { fontStyle: "bold" as const } },
-      item.variantName || "Standard",
-      `₹${item.priceAtPurchase.toFixed(2)}`,
-      item.quantity.toString(),
-      `₹${(item.priceAtPurchase * item.quantity).toFixed(2)}`
-    ]);
-
-    autoTable(doc, {
-      startY: 100,
-      head: [["Item Description", "Variant", "Price", "Qty", "Amount"]],
-      body: tableRows,
-      theme: "striped",
-      headStyles: {
-        fillColor: [20, 20, 20],
-        textColor: [255, 255, 255],
-        fontSize: 9,
-        fontStyle: "bold",
-        halign: "left"
-      },
-      bodyStyles: {
-        fontSize: 9,
-        textColor: [60, 60, 60]
-      },
-      columnStyles: {
-        4: { halign: "right", fontStyle: "bold" }
-      },
-      margin: { left: 15, right: 15 }
-    });
-
-    // -- 4. Summary Section --
-    const finalY = (doc as any).lastAutoTable.finalY + 15;
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    
-    // Subtotal
-    const subtotal = order.total + (order.discountAmount || 0);
-    doc.text("Subtotal", 140, finalY);
-    doc.setTextColor(40, 40, 40);
-    doc.text(`₹${subtotal.toFixed(2)}`, 195, finalY, { align: "right" });
-    
-    // Discount
-    if (order.couponCode) {
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Discount (${order.couponCode})`, 140, finalY + 7);
-      doc.setTextColor(34, 197, 94);
-      doc.text(`-₹${(order.couponDiscountAmount || 0).toFixed(2)}`, 195, finalY + 7, { align: "right" });
+    try {
+      const doc = buildInvoicePdf(order);
+      doc.save(getInvoiceFilename(order));
+      toast.success("Invoice downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate invoice");
     }
-    
-    // Shipping
-    doc.setTextColor(100, 100, 100);
-    doc.text("Shipping", 140, finalY + 14);
-    doc.setTextColor(40, 40, 40);
-    doc.text("₹0.00", 195, finalY + 14, { align: "right" });
-    
-    // Grand Total
-    doc.setFillColor(20, 20, 20);
-    doc.rect(135, finalY + 20, 60, 12, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("TOTAL", 140, finalY + 27.5);
-    doc.text(`₹${(order.total || 0).toFixed(2)}`, 195, finalY + 27.5, { align: "right" });
-
-    // -- 5. Footer --
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(150, 150, 150);
-    doc.text("Thank you for your purchase from PMU SUPPLY.", 105, 280, { align: "center" });
-    doc.text("For professional support, contact support@pmusupplies.in", 105, 285, { align: "center" });
-
-    doc.save(`Invoice_${order.id}.pdf`);
   };
 
+  /** Open the real tax-invoice PDF and trigger the browser print dialog. */
   const printInvoice = () => {
-    window.print();
+    if (!order) return;
+    try {
+      const doc = buildInvoicePdf(order);
+      doc.autoPrint();
+      const blobUrl = doc.output("bloburl");
+      const printWindow = window.open(blobUrl, "_blank");
+      if (!printWindow) {
+        doc.save(getInvoiceFilename(order));
+        toast.error("Popup blocked — invoice downloaded instead. Open it and print from your PDF viewer.");
+        return;
+      }
+      toast.success("Opening invoice for print…");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to open invoice for print");
+    }
   };
 
   if (isLoading) return (
@@ -340,7 +236,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                    )}
                    <div className="flex justify-between text-[10px] font-bold">
                       <span className="text-zinc-400 uppercase">Shipping</span>
-                      <span className="text-zinc-900">₹0.00</span>
+                      <span className="text-zinc-900">
+                        ₹{(order.shippingAmount ?? 0).toFixed(2)}
+                      </span>
                    </div>
                    <div className="flex justify-between pt-3 border-t border-zinc-200">
                       <span className="text-xs font-black uppercase tracking-widest text-zinc-800">Total</span>
@@ -402,13 +300,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-sm font-heading text-zinc-400 border border-zinc-100">
                      {order.shippingAddress?.firstName?.[0]}{order.shippingAddress?.lastName?.[0]}
                   </div>
-                  <div>
-                     <p className="text-xs font-bold text-zinc-900">{order.shippingAddress?.firstName} {order.shippingAddress?.lastName}</p>
-                     <p className="text-[10px] text-zinc-400 truncate w-32">{order.shippingAddress?.email}</p>
+                  <div className="min-w-0">
+                     <p className="text-xs font-bold text-zinc-900">
+                       {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
+                     </p>
+                     <p className="text-[10px] text-zinc-400 truncate">
+                       {order.shippingAddress?.city || "—"}
+                     </p>
                   </div>
                </div>
                
                <div className="space-y-4 pt-4 border-t border-zinc-50">
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                      <Phone className="w-3 h-3" /> Phone
+                    </p>
+                    {order.shippingAddress?.phone ? (
+                      <a
+                        href={`tel:${order.shippingAddress.phone.replace(/[\s\-()]/g, "")}`}
+                        className="text-sm font-bold text-zinc-900 hover:text-brand-gold transition-colors tabular-nums"
+                      >
+                        {order.shippingAddress.phone}
+                      </a>
+                    ) : (
+                      <p className="text-[11px] font-medium text-amber-600">Not provided</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                      <Mail className="w-3 h-3" /> Email
+                    </p>
+                    {order.shippingAddress?.email ? (
+                      <a
+                        href={`mailto:${order.shippingAddress.email}`}
+                        className="text-[11px] font-medium text-zinc-800 hover:text-brand-gold transition-colors break-all"
+                      >
+                        {order.shippingAddress.email}
+                      </a>
+                    ) : (
+                      <p className="text-[11px] font-medium text-zinc-400">Not provided</p>
+                    )}
+                  </div>
                   <div className="space-y-1.5">
                     <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                       <MapPin className="w-3 h-3" /> Delivery Address
@@ -418,12 +350,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                        {order.shippingAddress?.city}, {order.shippingAddress?.zipCode}<br/>
                        {order.shippingAddress?.country}
                     </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                      <Phone className="w-3 h-3" /> Contact
-                    </p>
-                    <p className="text-[11px] font-medium text-zinc-800">{order.shippingAddress?.phone || 'Not Provided'}</p>
                   </div>
                </div>
             </CardContent>

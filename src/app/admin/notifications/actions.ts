@@ -5,8 +5,8 @@ import { AdminNotification } from "@/lib/notifications";
 import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function getNotificationsAction() {
-  await requireAdmin();
   try {
+    await requireAdmin();
     const snapshot = await adminDb.collection("notifications")
       .orderBy("createdAt", "desc")
       .limit(10)
@@ -20,13 +20,13 @@ export async function getNotificationsAction() {
     return { success: true, notifications };
   } catch (err: any) {
     console.error("Error fetching notifications:", err);
-    return { success: false, error: err.message };
+    return { success: false, error: err.message, notifications: [] as AdminNotification[] };
   }
 }
 
 export async function getUnreadNotificationsCountAction() {
-  await requireAdmin();
   try {
+    await requireAdmin();
     const snapshot = await adminDb.collection("notifications")
       .where("isRead", "==", false)
       .get();
@@ -34,13 +34,13 @@ export async function getUnreadNotificationsCountAction() {
     return { success: true, count: snapshot.size };
   } catch (err: any) {
     console.error("Error fetching unread count:", err);
-    return { success: false, error: err.message };
+    return { success: false, error: err.message, count: 0 };
   }
 }
 
 export async function markNotificationAsReadAction(id: string) {
-  await requireAdmin();
   try {
+    await requireAdmin();
     await adminDb.collection("notifications").doc(id).update({
       isRead: true
     });
@@ -52,8 +52,8 @@ export async function markNotificationAsReadAction(id: string) {
 }
 
 export async function markAllNotificationsAsReadAction() {
-  await requireAdmin();
   try {
+    await requireAdmin();
     const snapshot = await adminDb.collection("notifications")
       .where("isRead", "==", false)
       .get();

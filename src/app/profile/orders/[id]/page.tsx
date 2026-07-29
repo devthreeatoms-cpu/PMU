@@ -24,6 +24,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { buildInvoicePdf, getInvoiceFilename } from "@/lib/invoice";
+import { toast } from "sonner";
 
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any; label: string }> = {
@@ -79,126 +81,16 @@ export default function OrderDetailsPage() {
     fetchData();
   }, [user, id, router]);
 
-  const generateInvoice = async () => {
+  const generateInvoice = () => {
     if (!order) return;
-    const { default: jsPDF } = await import("jspdf");
-    await import("jspdf-autotable");
-    const doc = new jsPDF() as any;
-    const date = new Date(order.createdAt).toLocaleDateString();
-    const invoiceNo = `INV-${(order.id || "ORDER").slice(-8).toUpperCase()}`;
-
-    // Header Branding
-    doc.setFillColor(0, 0, 0);
-    doc.rect(0, 0, 210, 40, "F");
-    doc.setTextColor(201, 168, 76); // Brand Gold
-    doc.setFontSize(24);
-    doc.text("PMU SUPPLY", 105, 20, { align: "center" });
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text("ELITE PROFESSIONAL EQUIPMENT", 105, 28, { align: "center" });
-
-    // Invoice Info
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(18);
-    doc.text("INVOICE", 20, 55);
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Date: ${date}`, 190, 55, { align: "right" });
-    doc.text(`Invoice #: ${invoiceNo}`, 190, 60, { align: "right" });
-
-    // Billing Info
-    doc.setTextColor(150, 150, 150);
-    doc.text("BILL TO:", 20, 75);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.text(`${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`, 20, 82);
-    doc.setFontSize(9);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`${order.shippingAddress.address}`, 20, 88);
-    doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`, 20, 93);
-    doc.text(`${order.shippingAddress.email}`, 20, 98);
-
-    // Payment Info
-    doc.setTextColor(150, 150, 150);
-    doc.text("PAYMENT METHOD:", 120, 75);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text("Razorpay Online", 120, 82);
-    doc.setTextColor(201, 168, 76);
-    doc.text(`ID: ${order.razorpayPaymentId || 'N/A'}`, 120, 88);
-
-    // Manual Table (Node-safe & Identical to Email)
-    let yPos = 110;
-    doc.setFillColor(0, 0, 0);
-    doc.rect(20, yPos - 7, 170, 10, 'F');
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(10);
-    doc.text("Description", 25, yPos);
-    doc.text("Qty", 120, yPos);
-    doc.text("Price", 145, yPos);
-    doc.text("Total", 170, yPos);
-    
-    yPos += 15;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9);
-    
-    order.items.forEach((item: any) => {
-      // Handle page overflow if many items
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
-      doc.text(item.productName.substring(0, 45), 25, yPos);
-      doc.text(item.quantity.toString(), 122, yPos);
-      doc.text(`INR ${item.priceAtPurchase.toFixed(2)}`, 145, yPos);
-      doc.text(`INR ${(item.priceAtPurchase * item.quantity).toFixed(2)}`, 170, yPos);
-      yPos += 10;
-    });
-
-    const finalY = yPos > 150 ? yPos : 150;
-
-    // Totals
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    // Totals Section (Re-aligned to prevent overlap)
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    
-    // Subtotal
-    const subtotalVal = order.subtotal || order.total - (order.shippingAmount || 0) - (order.taxAmount || 0);
-    doc.text("Subtotal:", 130, finalY + 15);
-    doc.text(`INR ${subtotalVal.toFixed(2)}`, 190, finalY + 15, { align: "right" });
-    
-    // Shipping
-    doc.text("Shipping:", 130, finalY + 22);
-    doc.text(`INR ${order.shippingAmount?.toFixed(2)}`, 190, finalY + 22, { align: "right" });
-
-    // Tax
-    doc.text("Tax (GST):", 130, finalY + 29);
-    doc.text(`INR ${order.taxAmount?.toFixed(2)}`, 190, finalY + 29, { align: "right" });
-
-    // Discounts
-    if (order.discountAmount > 0) {
-      doc.setTextColor(34, 197, 94);
-      doc.text("Incentives:", 130, finalY + 36);
-      doc.text(`-INR ${order.discountAmount?.toFixed(2)}`, 190, finalY + 36, { align: "right" });
+    try {
+      const doc = buildInvoicePdf(order);
+      doc.save(getInvoiceFilename(order));
+      toast.success("Invoice downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate invoice");
     }
-
-    // Grand Total (Clearer spacing)
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("GRAND TOTAL:", 125, finalY + 47);
-    doc.text(`INR ${order.total?.toFixed(2)}`, 190, finalY + 47, { align: "right" });
-    doc.setFont("helvetica", "normal");
-
-    // Footer Note
-    doc.setFontSize(8);
-    doc.setTextColor(180, 180, 180);
-    doc.text("Precision in Every Stroke. Quality in Every Asset.", 105, 280, { align: "center" });
-    doc.text("© 2026 PMU SUPPLY. ALL RIGHTS RESERVED.", 105, 285, { align: "center" });
-
-    doc.save(`Invoice-PMU-${invoiceNo}.pdf`);
   };
 
   if (isLoading) {

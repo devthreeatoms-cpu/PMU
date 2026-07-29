@@ -20,19 +20,28 @@ export function AdminNotifications() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
-    const [notifsResult, countResult] = await Promise.all([
-      getNotificationsAction(),
-      getUnreadNotificationsCountAction()
-    ]);
+    try {
+      const [notifsResult, countResult] = await Promise.all([
+        getNotificationsAction(),
+        getUnreadNotificationsCountAction(),
+      ]);
 
-    if (notifsResult.success) setNotifications(notifsResult.notifications || []);
-    if (countResult.success) setUnreadCount(countResult.count || 0);
+      if (notifsResult?.success) setNotifications(notifsResult.notifications || []);
+      if (countResult?.success) setUnreadCount(countResult.count || 0);
+    } catch (err) {
+      // Missing session should not crash the admin shell
+      console.warn("Notifications fetch skipped:", err);
+    }
   };
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Check every 10 seconds
-    return () => clearInterval(interval);
+    // Slight delay so AdminGuard can mint __session first
+    const start = setTimeout(fetchNotifications, 400);
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => {
+      clearTimeout(start);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {

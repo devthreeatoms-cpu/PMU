@@ -1,6 +1,5 @@
 import { Resend } from "resend";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { buildInvoicePdfBase64, getInvoiceFilename, getInvoiceNumber } from "@/lib/invoice";
 
 let _resend: Resend | null = null;
 function getResend() {
@@ -11,7 +10,7 @@ function getResend() {
   }
   return _resend;
 }
-const FROM_EMAIL = "PMU SUPPLY <support@pmusupplies.in>";
+const FROM_EMAIL = "PMU SUPPLY <pmusuppliesindia@gmail.com>";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://pmu-phi.vercel.app";
 
 /**
@@ -110,33 +109,59 @@ export async function sendEmailVerification(userEmail: string, verificationUrl: 
 // 2. Transactional Emails
 
 export async function sendOrderConfirmationEmail(order: any) {
-  const { id, total, items, shippingAddress } = order;
+  const { shippingAddress } = order;
+  const invoiceNo = getInvoiceNumber(order);
+  const items = Array.isArray(order.items) ? order.items : [];
 
-  const itemsHtml = items.map((item: any) => `
+  const fmt = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n)
+      ? `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : "₹0.00";
+  };
+
+  const itemsHtml = items
+    .map((item: any) => {
+      const name = item.productName || item.product?.name || "Product";
+      const qty = item.quantity || 1;
+      const unit = item.priceAtPurchase ?? item.product?.salePrice ?? item.product?.price ?? 0;
+      const variant = item.variantName ? `<p style="margin: 2px 0 0; font-size: 11px; color: #aaa;">${item.variantName}</p>` : "";
+      return `
     <tr>
       <td style="padding: 15px 0; border-bottom: 1px solid #f0f0f0;">
-        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #1a1a1a;">${item.productName}</p>
-        <p style="margin: 4px 0 0; font-size: 11px; color: #888; text-transform: uppercase;">Qty: ${item.quantity}</p>
+        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #1a1a1a;">${name}</p>
+        ${variant}
+        <p style="margin: 4px 0 0; font-size: 11px; color: #888; text-transform: uppercase;">Qty: ${qty}</p>
       </td>
       <td style="padding: 15px 0; border-bottom: 1px solid #f0f0f0; text-align: right;">
-        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #000;">₹${item.priceAtPurchase.toFixed(2)}</p>
+        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #000;">${fmt(unit * qty)}</p>
       </td>
-    </tr>
-  `).join("");
+    </tr>`;
+    })
+    .join("");
+
+  const subtotal = order.subtotal ?? items.reduce((s: number, i: any) => s + (i.totalPrice ?? (i.priceAtPurchase || 0) * (i.quantity || 1)), 0);
+  const discount = order.discountAmount ?? order.couponDiscountAmount ?? 0;
+  const tax = order.taxAmount ?? order.gstAmount ?? 0;
+  const shipping = order.shippingAmount ?? 0;
+  const convenience = order.convenienceFeeTotal ?? 0;
+  const total = order.total ?? subtotal - discount + tax + shipping + convenience;
+
+  const name = `${shippingAddress?.firstName || ""} ${shippingAddress?.lastName || ""}`.trim() || "Customer";
 
   const content = `
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 30px;">
       <h2 style="font-size: 22px; font-weight: 300; margin: 0;">Order <span style="color: #C9A84C; font-weight: 700;">Confirmed</span></h2>
-      <span style="font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px;">#${id}</span>
+      <span style="font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px;">${invoiceNo}</span>
     </div>
 
-    <p style="font-size: 14px; color: #666; margin-bottom: 30px;">Your professional order has been received and is being processed with the highest standards of clinical precision.</p>
+    <p style="font-size: 14px; color: #666; margin-bottom: 30px;">Thank you, ${name}. Your order has been received and is being prepared.</p>
 
     <table style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr>
-          <th style="text-align: left; font-size: 10px; text-transform: uppercase; color: #999; padding-bottom: 15px; border-bottom: 2px solid #000;">Asset Details</th>
-          <th style="text-align: right; font-size: 10px; text-transform: uppercase; color: #999; padding-bottom: 15px; border-bottom: 2px solid #000;">Investment</th>
+          <th style="text-align: left; font-size: 10px; text-transform: uppercase; color: #999; padding-bottom: 15px; border-bottom: 2px solid #000;">Item</th>
+          <th style="text-align: right; font-size: 10px; text-transform: uppercase; color: #999; padding-bottom: 15px; border-bottom: 2px solid #000;">Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -144,23 +169,47 @@ export async function sendOrderConfirmationEmail(order: any) {
       </tbody>
       <tfoot>
         <tr>
-          <td style="padding-top: 25px; font-size: 14px; font-weight: 400; color: #666;">Subtotal</td>
-          <td style="padding-top: 25px; font-size: 14px; font-weight: 400; text-align: right; color: #666;">₹${total.toFixed(2)}</td>
+          <td style="padding-top: 20px; font-size: 13px; color: #666;">Subtotal</td>
+          <td style="padding-top: 20px; font-size: 13px; text-align: right; color: #666;">${fmt(subtotal)}</td>
         </tr>
+        ${
+          discount > 0
+            ? `<tr>
+          <td style="padding-top: 8px; font-size: 13px; color: #16a34a;">Discount${order.couponCode ? ` (${String(order.couponCode).toUpperCase()})` : ""}</td>
+          <td style="padding-top: 8px; font-size: 13px; text-align: right; color: #16a34a;">- ${fmt(discount)}</td>
+        </tr>`
+            : ""
+        }
+        ${
+          tax > 0
+            ? `<tr>
+          <td style="padding-top: 8px; font-size: 13px; color: #666;">GST / Tax</td>
+          <td style="padding-top: 8px; font-size: 13px; text-align: right; color: #666;">${fmt(tax)}</td>
+        </tr>`
+            : ""
+        }
+        ${
+          convenience > 0
+            ? `<tr>
+          <td style="padding-top: 8px; font-size: 13px; color: #666;">Convenience Fee</td>
+          <td style="padding-top: 8px; font-size: 13px; text-align: right; color: #666;">${fmt(convenience)}</td>
+        </tr>`
+            : ""
+        }
         <tr>
-          <td style="padding-top: 10px; font-size: 16px; font-weight: 800; color: #000; text-transform: uppercase;">Total Amount</td>
-          <td style="padding-top: 10px; font-size: 20px; font-weight: 800; text-align: right; color: #C9A84C;">₹${total.toFixed(2)}</td>
+          <td style="padding-top: 14px; font-size: 16px; font-weight: 800; color: #000; text-transform: uppercase;">Total Amount</td>
+          <td style="padding-top: 14px; font-size: 20px; font-weight: 800; text-align: right; color: #C9A84C;">${fmt(total)}</td>
         </tr>
       </tfoot>
     </table>
 
     <div style="margin-top: 45px; padding: 25px; background-color: #000; color: #fff; border-radius: 4px;">
-      <h3 style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; color: #C9A84C;">Delivery Logistics</h3>
+      <h3 style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 0; color: #C9A84C;">Delivery Address</h3>
       <p style="font-size: 13px; color: #fff; margin: 0; opacity: 0.9; line-height: 1.8;">
-        ${shippingAddress.firstName} ${shippingAddress.lastName}<br>
-        ${shippingAddress.address}<br>
-        ${shippingAddress.city}, ${shippingAddress.zipCode}<br>
-        ${shippingAddress.phone}
+        ${name}<br>
+        ${shippingAddress?.address || ""}<br>
+        ${[shippingAddress?.city, shippingAddress?.zipCode].filter(Boolean).join(", ")}<br>
+        ${shippingAddress?.phone || ""}
       </p>
     </div>
   `;
@@ -169,147 +218,35 @@ export async function sendOrderConfirmationEmail(order: any) {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to: [shippingAddress.email],
-      subject: `Order Confirmed | PMU SUPPLY #${id}`,
-      html: ProfessionalEmailWrapper(content, "Your PMU SUPPLY order has been confirmed and is being processed.")
+      subject: `Order Confirmed | ${invoiceNo} | PMU SUPPLY`,
+      html: ProfessionalEmailWrapper(content, "Your PMU SUPPLY order has been confirmed and is being processed."),
     });
     return { success: true };
   } catch (error) {
-    console.error("Resend Order Update Error:", error);
+    console.error("Resend Order Confirmation Error:", error);
     return { success: false, error };
   }
 }
 
 export async function sendInvoiceEmail(order: any) {
-  const { id, total, items, shippingAddress, razorpayPaymentId, paymentVerifiedAt } = order;
+  const { id, shippingAddress } = order;
+  const invoiceNo = getInvoiceNumber(order);
 
-  // 1. Generate PDF Invoice
+  // 1. Generate PDF Invoice (shared builder — real values, clean format)
   let pdfBase64 = "";
   try {
-    const doc = new jsPDF() as any;
-    const date = new Date(paymentVerifiedAt || Date.now()).toLocaleDateString();
-
-    // Header Branding
-    doc.setFillColor(0, 0, 0);
-    doc.rect(0, 0, 210, 40, "F");
-    doc.setTextColor(201, 168, 76); // Brand Gold
-    doc.setFontSize(24);
-    doc.text("PMU SUPPLY", 105, 20, { align: "center" });
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text("ELITE PROFESSIONAL EQUIPMENT", 105, 28, { align: "center" });
-
-    // Invoice Info
-    const invoiceNo = `INV-${id.substring(0, 8).toUpperCase()}`;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(18);
-    doc.text("INVOICE", 20, 55);
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Date: ${date}`, 190, 55, { align: "right" });
-    doc.text(`Invoice #: ${invoiceNo}`, 190, 60, { align: "right" });
-
-    // Billing Info
-    doc.setTextColor(150, 150, 150);
-    doc.text("BILL TO:", 20, 75);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.text(`${shippingAddress.firstName} ${shippingAddress.lastName}`, 20, 82);
-    doc.setFontSize(9);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`${shippingAddress.address}`, 20, 88);
-    doc.text(`${shippingAddress.city}, ${shippingAddress.zipCode}`, 20, 93);
-    doc.text(`${shippingAddress.email}`, 20, 98);
-
-    // Payment Info
-    doc.setTextColor(150, 150, 150);
-    doc.text("PAYMENT METHOD:", 120, 75);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.text("Razorpay Online", 120, 82);
-    doc.setTextColor(201, 168, 76);
-    doc.text(`ID: ${razorpayPaymentId || 'N/A'}`, 120, 88);
-
-    // Table Header
-    let yPos = 110;
-    doc.setFillColor(0, 0, 0);
-    doc.rect(20, yPos - 7, 170, 10, 'F');
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(10);
-    doc.text("Description", 25, yPos);
-    doc.text("Qty", 120, yPos);
-    doc.text("Price", 145, yPos);
-    doc.text("Total", 170, yPos);
-    
-    yPos += 15;
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9);
-    
-    items.forEach((item: any) => {
-      const name = (item.productName || item.product?.name || "Product").substring(0, 45);
-      const qty = item.quantity.toString();
-      const price = `INR ${(item.priceAtPurchase || item.product?.price || 0).toFixed(2)}`;
-      const itemTotal = `INR ${((item.priceAtPurchase || item.product?.price || 0) * item.quantity).toFixed(2)}`;
-      
-      doc.text(name, 25, yPos);
-      doc.text(qty, 122, yPos);
-      doc.text(price, 145, yPos);
-      doc.text(itemTotal, 170, yPos);
-      yPos += 10;
-    });
-
-    const finalY = yPos > 150 ? yPos : 150;
-
-    // Totals Section (Re-aligned to prevent overlap)
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    
-    // Subtotal
-    const subtotalVal = order.subtotal || total - (order.shippingAmount || 0) - (order.taxAmount || 0);
-    doc.text("Subtotal:", 130, finalY + 15);
-    doc.text(`INR ${subtotalVal.toFixed(2)}`, 190, finalY + 15, { align: "right" });
-    
-    // Shipping
-    doc.text("Shipping:", 130, finalY + 22);
-    doc.text(`INR ${(order.shippingAmount || 0).toFixed(2)}`, 190, finalY + 22, { align: "right" });
-
-    // Tax
-    doc.text("Tax (GST):", 130, finalY + 29);
-    doc.text(`INR ${(order.taxAmount || 0).toFixed(2)}`, 190, finalY + 29, { align: "right" });
-
-    // Discounts
-    if (order.discountAmount > 0) {
-      doc.setTextColor(34, 197, 94);
-      doc.text("Incentives:", 130, finalY + 36);
-      doc.text(`-INR ${order.discountAmount.toFixed(2)}`, 190, finalY + 36, { align: "right" });
-    }
-
-    // Grand Total (Clearer spacing)
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("GRAND TOTAL:", 125, finalY + 47);
-    doc.text(`INR ${total.toFixed(2)}`, 190, finalY + 47, { align: "right" });
-    doc.setFont("helvetica", "normal");
-
-    // Footer Note
-    doc.setFontSize(8);
-    doc.setTextColor(180, 180, 180);
-    doc.text("Precision in Every Stroke. Quality in Every Asset.", 105, 280, { align: "center" });
-    doc.text("© 2026 PMU SUPPLY. ALL RIGHTS RESERVED.", 105, 285, { align: "center" });
-
-    const pdfOutput = doc.output("arraybuffer");
-    pdfBase64 = Buffer.from(pdfOutput).toString("base64");
+    pdfBase64 = buildInvoicePdfBase64(order);
   } catch (pdfErr) {
     console.error("PDF Generation Error:", pdfErr);
   }
 
   const content = `
     <h2 style="font-size: 22px; font-weight: 300; margin-bottom: 20px;">Your Official <span style="color: #C9A84C; font-weight: 700;">Invoice</span></h2>
-    <p style="font-size: 15px; color: #444; margin-bottom: 30px;">Thank you for your professional acquisition. Please find your official invoice attached to this email in PDF format for your records.</p>
+    <p style="font-size: 15px; color: #444; margin-bottom: 30px;">Thank you for your order. Please find your tax invoice attached to this email in PDF format for your records.</p>
     
     <div style="background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 25px; text-align: center;">
-      <p style="margin: 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
-      <h3 style="margin: 10px 0; font-size: 20px; color: #000; font-weight: 700;">#${id}</h3>
+      <p style="margin: 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Invoice Number</p>
+      <h3 style="margin: 10px 0; font-size: 20px; color: #000; font-weight: 700;">${invoiceNo}</h3>
       <p style="margin: 15px 0 0 0; font-size: 13px; color: #C9A84C; font-weight: 700;">📎 PDF Invoice Attached</p>
     </div>
 
@@ -322,24 +259,24 @@ export async function sendInvoiceEmail(order: any) {
     const emailOptions: any = {
       from: FROM_EMAIL,
       to: [shippingAddress.email],
-      subject: `Official Invoice | PMU SUPPLY Order #${id}`,
-      html: ProfessionalEmailWrapper(content, `Invoice for your order #${id} from PMU SUPPLY.`),
+      subject: `Invoice ${invoiceNo} | PMU SUPPLY`,
+      html: ProfessionalEmailWrapper(content, `Invoice ${invoiceNo} from PMU SUPPLY.`),
     };
 
     if (pdfBase64) {
       emailOptions.attachments = [
         {
-          filename: `Invoice-PMU-${id.slice(-8).toUpperCase()}.pdf`,
-          content: Buffer.from(pdfBase64, 'base64'),
-          contentType: 'application/pdf',
-        }
+          filename: getInvoiceFilename(order),
+          content: Buffer.from(pdfBase64, "base64"),
+          contentType: "application/pdf",
+        },
       ];
     }
 
     await getResend().emails.send(emailOptions);
     return { success: true };
   } catch (error) {
-    console.error("Resend Order Update Error:", error);
+    console.error("Resend Invoice Email Error:", error);
     return { success: false, error };
   }
 }

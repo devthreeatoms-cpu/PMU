@@ -75,7 +75,15 @@ export async function getUserTransactionsAction(userId: string) {
 export async function setUserRoleAction(userId: string, role: 'admin' | 'customer') {
   await requireAdmin();
   try {
-    await adminDb.collection("users").doc(userId).update({ role });
+    const userRef = adminDb.collection("users").doc(userId);
+    const snap = await userRef.get();
+    const email = (snap.data()?.email || "").toString().trim().toLowerCase();
+    // Normalize email so Google login (new UID) can inherit this role by email match
+    await userRef.update({
+      role,
+      ...(email ? { email } : {}),
+      updatedAt: Date.now(),
+    });
     return { success: true };
   } catch (err: any) {
     console.error("setUserRoleAction error:", err);

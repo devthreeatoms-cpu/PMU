@@ -137,15 +137,23 @@ export async function fulfillPaidOrder(
   try {
     const emailData = {
       id: razorpayOrderId,
+      orderId: razorpayOrderId,
+      razorpayOrderId,
+      status: "paid",
       total: orderData.total,
       subtotal: orderData.subtotal,
-      taxAmount: orderData.taxAmount,
-      shippingAmount: orderData.shippingAmount,
+      taxAmount: orderData.taxAmount ?? orderData.gstAmount ?? 0,
+      gstAmount: orderData.gstAmount ?? orderData.taxAmount ?? 0,
+      shippingAmount: orderData.shippingAmount ?? 0,
       discountAmount: orderData.discountAmount || orderData.couponDiscountAmount || 0,
+      couponDiscountAmount: orderData.couponDiscountAmount || orderData.discountAmount || 0,
+      couponCode: orderData.couponCode || null,
+      convenienceFeeTotal: orderData.convenienceFeeTotal || 0,
       items: orderData.items,
       shippingAddress: orderData.shippingAddress,
       razorpayPaymentId: razorpayPaymentId,
       paymentVerifiedAt: Date.now(),
+      createdAt: orderData.createdAt || Date.now(),
     };
 
     await sendOrderConfirmationEmail(emailData);

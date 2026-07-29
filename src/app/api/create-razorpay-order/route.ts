@@ -1,6 +1,23 @@
 import { NextResponse } from "next/server";
 import { razorpay } from "@/lib/razorpay";
 import { adminDb } from "@/lib/firebase-admin";
+import { computeShippingAmount, normalizeShippingSettings } from "@/lib/shipping";
+import { ShippingSettings } from "@/lib/types";
+
+function applyCouponDiscount(
+  type: string | undefined,
+  value: number,
+  subtotal: number
+): { productDiscount: number; freeShipping: boolean } {
+  if (type === "free_shipping") {
+    return { productDiscount: 0, freeShipping: true };
+  }
+  if (type === "percentage") {
+    return { productDiscount: subtotal * (Number(value) / 100), freeShipping: false };
+  }
+  // flat
+  return { productDiscount: Number(value) || 0, freeShipping: false };
+}
 
 export async function POST(req: Request) {
   try {
@@ -8,6 +25,15 @@ export async function POST(req: Request) {
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Empty cart" }, { status: 400 });
+    }
+
+    // Phone is required for delivery coordination
+    const phoneRaw = String(shippingAddress?.phone || "").replace(/[\s\-()]/g, "").trim();
+    if (!phoneRaw || !/^(?:\+?91)?[6-9]\d{9}$/.test(phoneRaw)) {
+      return NextResponse.json(
+        { error: "A valid 10-digit phone number is required for checkout." },
+        { status: 400 }
+      );
     }
 
     // 1. Calculate Subtotal, GST & Convenience Fees
@@ -50,6 +76,7 @@ export async function POST(req: Request) {
 
     // 2. Handle Coupon — use couponId (from validate-coupon) for direct lookup
     let couponDiscountAmount = 0;
+    let freeShippingCoupon = false;
     let couponId: string | null = null;
     let resolvedCouponCode: string | null = null;
 
@@ -74,10 +101,10 @@ export async function POST(req: Request) {
         if (isCurrentlyActive && isNotExpired) {
           couponId = lookupId;
           resolvedCouponCode = (d.code as string) ?? lookupCode;
-          couponDiscountAmount = d.type === "percentage"
-            ? subtotal * (Number(d.value) / 100)
-            : Number(d.value);
-          console.log("[RazorpayAPI] Coupon Applied (ID):", { couponDiscountAmount, type: d.type, value: d.value });
+          const applied = applyCouponDiscount(d.type, Number(d.value), subtotal);
+          couponDiscountAmount = applied.productDiscount;
+          freeShippingCoupon = applied.freeShipping;
+          console.log("[RazorpayAPI] Coupon Applied (ID):", { couponDiscountAmount, freeShippingCoupon, type: d.type, value: d.value });
         } else {
           console.log("[RazorpayAPI] Coupon ineligible:", { isCurrentlyActive, isNotExpired, expiryMs });
         }
@@ -86,7 +113,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (couponDiscountAmount === 0 && lookupCode) {
+    if (couponDiscountAmount === 0 && !freeShippingCoupon && lookupCode) {
       // Fallback: query by code
       const snap = await adminDb.collection("coupons").where("code", "==", lookupCode).limit(1).get();
       if (!snap.empty) {
@@ -102,23 +129,36 @@ export async function POST(req: Request) {
         if (isCurrentlyActive && isNotExpired) {
           couponId = snap.docs[0].id;
           resolvedCouponCode = (d.code as string) ?? lookupCode;
-          couponDiscountAmount = d.type === "percentage"
-            ? subtotal * (Number(d.value) / 100)
-            : Number(d.value);
-          console.log("[RazorpayAPI] Coupon Applied (Code):", { couponDiscountAmount, type: d.type, value: d.value });
+          const applied = applyCouponDiscount(d.type, Number(d.value), subtotal);
+          couponDiscountAmount = applied.productDiscount;
+          freeShippingCoupon = applied.freeShipping;
+          console.log("[RazorpayAPI] Coupon Applied (Code):", { couponDiscountAmount, freeShippingCoupon, type: d.type, value: d.value });
         }
       } else {
         console.log("[RazorpayAPI] Coupon not found for Code:", lookupCode);
       }
     }
 
-    console.log("[RazorpayAPI] Final Totals:", { subtotal, couponDiscountAmount, finalSubtotal: subtotal - couponDiscountAmount });
-
-
-    // 3. Shipping & Total
+    // 3. Universal shipping (admin Shipping module) + total
     const finalSubtotal = Math.max(0, subtotal - couponDiscountAmount);
-    const shipping = 0;
+    const shippingSnap = await adminDb.collection("siteSettings").doc("shipping").get();
+    const shippingSettings = normalizeShippingSettings(
+      shippingSnap.exists ? (shippingSnap.data() as ShippingSettings) : null
+    );
+    const shipping = computeShippingAmount(
+      shippingSettings,
+      finalSubtotal,
+      freeShippingCoupon
+    );
     const total = Math.round((finalSubtotal + shipping + gstAmount + convenienceFeeTotal) * 100) / 100;
+
+    console.log("[RazorpayAPI] Final Totals:", {
+      subtotal,
+      couponDiscountAmount,
+      shipping,
+      freeShippingCoupon,
+      total,
+    });
 
     // 4. Create Razorpay Order
     const amountInCents = Math.round(total * 100);

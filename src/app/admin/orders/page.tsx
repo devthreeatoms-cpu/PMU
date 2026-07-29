@@ -151,11 +151,12 @@ export default function AdminOrdersPage() {
   };
 
   const exportOrdersToCSV = () => {
-    const headers = ["Order ID", "Customer", "Email", "Date", "Items", "Total", "Status"];
+    const headers = ["Order ID", "Customer", "Email", "Phone", "Date", "Items", "Total", "Status"];
     const rows = filteredOrders.map(order => [
       order.id,
       order.shippingAddress ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` : "Unknown",
       order.shippingAddress?.email || "N/A",
+      order.shippingAddress?.phone || "N/A",
       new Date(order.createdAt).toLocaleDateString(),
       order.items?.length.toString() || "0",
       order.total?.toString() || "0",
@@ -187,7 +188,9 @@ export default function AdminOrdersPage() {
       order.userId?.toLowerCase().includes(term) ||
       order.shippingAddress?.firstName?.toLowerCase().includes(term) ||
       order.shippingAddress?.lastName?.toLowerCase().includes(term) ||
-      order.shippingAddress?.email?.toLowerCase().includes(term)
+      order.shippingAddress?.email?.toLowerCase().includes(term) ||
+      order.shippingAddress?.phone?.toLowerCase().includes(term) ||
+      order.shippingAddress?.phone?.replace(/\D/g, "").includes(term.replace(/\D/g, ""))
     );
   }, [orders, searchTerm]);
 
@@ -315,9 +318,12 @@ export default function AdminOrdersPage() {
                   <TableRow key={order.id} className="hover:bg-zinc-50/50 transition-colors group">
                     <TableCell className="px-8 font-mono text-[11px] font-bold text-zinc-400 group-hover:text-brand-gold transition-colors">{order.id}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-bold text-zinc-900">
                           {order.shippingAddress ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` : order.userId}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 font-medium tabular-nums">
+                          {order.shippingAddress?.phone || "No phone"}
                         </span>
                         <span className="text-[10px] text-zinc-400 font-light">{order.shippingAddress?.city || "—"}</span>
                       </div>
@@ -394,6 +400,9 @@ export default function AdminOrdersPage() {
                     <div>
                       <p className="text-xs font-bold text-zinc-900">
                         {order.shippingAddress ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` : order.userId}
+                      </p>
+                      <p className="text-[10px] text-zinc-600 font-medium tabular-nums">
+                        {order.shippingAddress?.phone || "No phone"}
                       </p>
                       <p className="text-[10px] text-zinc-400">
                         {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} · {order.items?.length ?? 0} items

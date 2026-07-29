@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { trackCheckoutStart, trackCheckoutComplete } from "@/lib/analytics";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { buildInvoicePdf, getInvoiceFilename } from "@/lib/invoice";
+import { DEFAULT_SHIPPING_SETTINGS, ShippingSettings } from "@/lib/types";
+import { computeShippingAmount } from "@/lib/shipping";
+import { getShippingSettingsAction } from "@/app/admin/shipping/actions";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -31,9 +33,27 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [finalPaymentDetails, setFinalPaymentDetails] = useState<{orderId: string, paymentId: string} | null>(null);
   const paidItemsRef = useRef<typeof items | null>(null);
+  const paidTotalsRef = useRef<{
+    subtotal: number;
+    discountAmount: number;
+    shippingAmount: number;
+    gstAmount: number;
+    convenienceFeeTotal: number;
+    total: number;
+    couponCode: string | null;
+  } | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings>({
+    ...DEFAULT_SHIPPING_SETTINGS,
+  });
+
+  useEffect(() => {
+    getShippingSettingsAction().then((res) => {
+      if (res.success) setShippingSettings(res.settings);
+    });
+  }, []);
 
   const [formData, setFormData] = useState({
     email: user?.email || "",
@@ -45,24 +65,52 @@ export default function CheckoutPage() {
     country: "India",
     phone: ""
   });
+  const [phoneError, setPhoneError] = useState("");
 
   useEffect(() => {
-    if (user?.email && !formData.email) {
-      setFormData(prev => ({ ...prev, email: user.email! }));
-    }
-  }, [user]);
+    if (!user && !profile) return;
+    setFormData((prev) => {
+      const addr = profile?.defaultShippingAddress;
+      return {
+        ...prev,
+        email: prev.email || user?.email || "",
+        firstName: prev.firstName || addr?.firstName || "",
+        lastName: prev.lastName || addr?.lastName || "",
+        address: prev.address || addr?.address || "",
+        city: prev.city || addr?.city || "",
+        zipCode: prev.zipCode || addr?.zipCode || "",
+        country: prev.country || addr?.country || "India",
+        phone: prev.phone || addr?.phone || "",
+      };
+    });
+  }, [user, profile]);
+
+  /** Normalize / validate Indian mobile numbers (required for delivery). */
+  const normalizePhone = (raw: string) => raw.replace(/[\s\-()]/g, "").trim();
+
+  const isValidPhone = (raw: string) => {
+    const phone = normalizePhone(raw);
+    // 10-digit mobile, or +91 / 91 prefix
+    return /^(?:\+?91)?[6-9]\d{9}$/.test(phone);
+  };
 
   const subtotal = getCartTotal();
 
   const discountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
-    if (appliedCoupon.type === 'percentage') {
+    if (appliedCoupon.type === "free_shipping") return 0;
+    if (appliedCoupon.type === "percentage") {
       return subtotal * (appliedCoupon.value / 100);
     }
-    return appliedCoupon.value;
+    return Number(appliedCoupon.value) || 0;
   }, [appliedCoupon, subtotal]);
 
-  const shippingAmount = 0;
+  const freeShippingCoupon = appliedCoupon?.type === "free_shipping";
+
+  const shippingAmount = useMemo(() => {
+    const afterDiscount = Math.max(0, subtotal - discountAmount);
+    return computeShippingAmount(shippingSettings, afterDiscount, freeShippingCoupon);
+  }, [shippingSettings, subtotal, discountAmount, freeShippingCoupon]);
 
   const gstAmount = useMemo(() => {
     return items.reduce((sum, item) => {
@@ -77,7 +125,10 @@ export default function CheckoutPage() {
     }, 0);
   }, [items]);
 
-  const total = Math.round(Math.max(0, subtotal - discountAmount + shippingAmount + gstAmount + convenienceFeeTotal) * 100) / 100;
+  const total =
+    Math.round(
+      Math.max(0, subtotal - discountAmount + shippingAmount + gstAmount + convenienceFeeTotal) * 100
+    ) / 100;
 
   const handleApplyCoupon = async () => {
     if (!couponCode) return;
@@ -104,6 +155,19 @@ export default function CheckoutPage() {
 
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
+    const phone = normalizePhone(formData.phone);
+    if (!phone) {
+      setPhoneError("Phone number is required for delivery updates.");
+      toast.error("Please enter your phone number.");
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setPhoneError("Enter a valid 10-digit Indian mobile number.");
+      toast.error("Please enter a valid phone number.");
+      return;
+    }
+    setPhoneError("");
+    setFormData((prev) => ({ ...prev, phone }));
     setStep(2);
     window.scrollTo(0, 0);
   };
@@ -111,6 +175,15 @@ export default function CheckoutPage() {
 
   const handlePaymentSuccess = () => {
     paidItemsRef.current = [...items];
+    paidTotalsRef.current = {
+      subtotal,
+      discountAmount,
+      shippingAmount,
+      gstAmount,
+      convenienceFeeTotal,
+      total,
+      couponCode: appliedCoupon?.code ?? null,
+    };
     setStep(3);
     clearCart();
     toast.success("Payment Received. Your PMU SUPPLY package is being prepared.");
@@ -121,6 +194,11 @@ export default function CheckoutPage() {
   };
 
   const initiatePayment = async () => {
+    if (!isValidPhone(formData.phone)) {
+      toast.error("A valid phone number is required. Please revise your details.");
+      setStep(1);
+      return;
+    }
     setIsProcessing(true);
     try {
       // 1. Create the Razorpay Order right before payment to ensure totals are final
@@ -186,6 +264,7 @@ export default function CheckoutPage() {
         prefill: {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
+          contact: normalizePhone(formData.phone).replace(/^\+?91/, ""),
         },
         theme: {
           color: "#C9A84C",
@@ -257,76 +336,46 @@ export default function CheckoutPage() {
                   <Button 
                     onClick={() => {
                       try {
-                        const doc = new jsPDF() as any;
-                        const date = new Date().toLocaleDateString();
-                        const invoiceNo = `INV-${finalPaymentDetails?.orderId?.slice(-8).toUpperCase() || 'SUCCESS'}`;
-
-                        // Header Branding
-                        doc.setFillColor(0, 0, 0);
-                        doc.rect(0, 0, 210, 40, "F");
-                        doc.setTextColor(201, 168, 76);
-                        doc.setFontSize(24);
-                        doc.text("PMU SUPPLY", 105, 20, { align: "center" });
-                        doc.setFontSize(8);
-                        doc.setTextColor(255, 255, 255);
-                        doc.text("ELITE PROFESSIONAL EQUIPMENT", 105, 28, { align: "center" });
-
-                        // Invoice Info
-                        doc.setTextColor(0, 0, 0);
-                        doc.setFontSize(18);
-                        doc.text("INVOICE", 20, 55);
-                        doc.setFontSize(9);
-                        doc.setTextColor(100, 100, 100);
-                        doc.text(`Date: ${date}`, 190, 55, { align: "right" });
-                        doc.text(`Invoice #: ${invoiceNo}`, 190, 60, { align: "right" });
-
-                        // Billing
-                        doc.setTextColor(150, 150, 150);
-                        doc.text("BILL TO:", 20, 75);
-                        doc.setTextColor(0, 0, 0);
-                        doc.setFontSize(11);
-                        doc.text(`${formData.firstName} ${formData.lastName}`, 20, 82);
-                        doc.setFontSize(9);
-                        doc.text(`${formData.address}`, 20, 88);
-                        doc.text(`${formData.city}, ${formData.zipCode}`, 20, 93);
-
-                        // Manual Table drawing (Reliable & Consistent)
-                        let yPos = 110;
-                        doc.setFillColor(0, 0, 0);
-                        doc.rect(20, yPos - 7, 170, 10, 'F');
-                        doc.setTextColor(201, 168, 76);
-                        doc.setFontSize(10);
-                        doc.text("Description", 25, yPos);
-                        doc.text("Qty", 120, yPos);
-                        doc.text("Price", 145, yPos);
-                        doc.text("Total", 170, yPos);
-                        
-                        yPos += 15;
-                        doc.setTextColor(0, 0, 0);
-                        doc.setFontSize(9);
-
-                        (paidItemsRef.current || []).forEach((item: any) => {
-                          const name = item.product.name.substring(0, 45);
-                          const qty = item.quantity.toString();
-                          const price = (item.product.salePrice || item.product.price).toFixed(2);
-                          const itemTotal = ((item.product.salePrice || item.product.price) * item.quantity).toFixed(2);
-                          
-                          doc.text(name, 25, yPos);
-                          doc.text(qty, 122, yPos);
-                          doc.text(`INR ${price}`, 145, yPos);
-                          doc.text(`INR ${itemTotal}`, 170, yPos);
-                          yPos += 10;
-                        });
-
-                        const finalY = yPos > 150 ? yPos : 150;
-                        doc.setTextColor(201, 168, 76);
-                        doc.setFontSize(12);
-                        doc.text("GRAND TOTAL:", 140, finalY + 25);
-                        doc.text(`INR ${total.toFixed(2)}`, 190, finalY + 25, { align: "right" });
-
-                        doc.save(`Invoice-PMU-${invoiceNo}.pdf`);
+                        const cartItems = paidItemsRef.current || [];
+                        const totals = paidTotalsRef.current;
+                        if (!cartItems.length || !totals) {
+                          toast.error("Invoice data expired. Download from your profile order.");
+                          return;
+                        }
+                        const invoiceOrder = {
+                          id: finalPaymentDetails?.orderId,
+                          orderId: finalPaymentDetails?.orderId,
+                          razorpayOrderId: finalPaymentDetails?.orderId,
+                          razorpayPaymentId: finalPaymentDetails?.paymentId,
+                          status: "paid" as const,
+                          createdAt: Date.now(),
+                          paymentVerifiedAt: Date.now(),
+                          subtotal: totals.subtotal,
+                          discountAmount: totals.discountAmount,
+                          couponDiscountAmount: totals.discountAmount,
+                          couponCode: totals.couponCode,
+                          shippingAmount: totals.shippingAmount,
+                          taxAmount: totals.gstAmount,
+                          gstAmount: totals.gstAmount,
+                          convenienceFeeTotal: totals.convenienceFeeTotal,
+                          total: totals.total,
+                          shippingAddress: formData,
+                          items: cartItems.map((item) => {
+                            const unit = item.product.salePrice ?? item.product.price;
+                            return {
+                              productName: item.product.name,
+                              variantName: item.variantName || null,
+                              quantity: item.quantity,
+                              priceAtPurchase: unit,
+                              totalPrice: unit * item.quantity,
+                            };
+                          }),
+                        };
+                        const doc = buildInvoicePdf(invoiceOrder);
+                        doc.save(getInvoiceFilename(invoiceOrder));
                         toast.success("Downloading your invoice...");
                       } catch (err) {
+                        console.error(err);
                         toast.error("Failed to generate PDF. Check profile for download.");
                       }
                     }}
@@ -371,9 +420,50 @@ export default function CheckoutPage() {
                           <Input required value={formData.lastName} onChange={(e)=>setFormData({...formData, lastName: e.target.value})} className="h-12 rounded-none border-zinc-200 bg-zinc-50/30 focus:border-brand-gold" />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold tracking-widest uppercase opacity-60">Email Address</Label>
-                        <Input type="email" required value={formData.email} onChange={(e)=>setFormData({...formData, email: e.target.value})} className="h-12 rounded-none border-zinc-200 bg-zinc-50/30 focus:border-brand-gold" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold tracking-widest uppercase opacity-60">
+                            Email Address
+                          </Label>
+                          <Input
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="h-12 rounded-none border-zinc-200 bg-zinc-50/30 focus:border-brand-gold"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold tracking-widest uppercase opacity-60">
+                            Phone Number <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            required
+                            placeholder="10-digit mobile (e.g. 9876543210)"
+                            value={formData.phone}
+                            onChange={(e) => {
+                              setFormData({ ...formData, phone: e.target.value });
+                              if (phoneError) setPhoneError("");
+                            }}
+                            aria-invalid={!!phoneError}
+                            aria-describedby={phoneError ? "checkout-phone-error" : undefined}
+                            className={`h-12 rounded-none border-zinc-200 bg-zinc-50/30 focus:border-brand-gold ${
+                              phoneError ? "border-red-400 focus:border-red-500" : ""
+                            }`}
+                          />
+                          {phoneError ? (
+                            <p id="checkout-phone-error" className="text-[11px] text-red-600 font-medium">
+                              {phoneError}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-zinc-400">
+                              Required for delivery & order updates (WhatsApp / SMS)
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold tracking-widest uppercase opacity-60">Home/Studio Address</Label>
@@ -417,6 +507,7 @@ export default function CheckoutPage() {
                         <div className="space-y-2">
                           <p className="text-[10px] font-bold tracking-widest text-brand-gold uppercase">Contact Details</p>
                           <p className="text-sm font-light">{formData.email}</p>
+                          <p className="text-sm font-light">{formData.phone || "—"}</p>
                           <button onClick={() => setStep(1)} className="text-[10px] font-bold tracking-widest hover:text-brand-gold transition-colors mt-2 uppercase border-b border-brand-black/10">Modify Info</button>
                         </div>
                       </div>
@@ -517,15 +608,29 @@ export default function CheckoutPage() {
 
                     <div className="space-y-4 font-light text-sm pt-4 border-t border-zinc-50">
                       <div className="flex justify-between tracking-widest uppercase text-[10px]">
-                        <span className="text-zinc-400">Inventory Total</span>
+                        <span className="text-zinc-400">Product Total</span>
                         <span className="font-bold text-zinc-800">₹{subtotal.toFixed(2)}</span>
                       </div>
                       {discountAmount > 0 && (
                         <div className="flex justify-between tracking-widest uppercase text-[10px] text-emerald-600">
-                          <span>Merchant Discount</span>
+                          <span>Discount</span>
                           <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                         </div>
                       )}
+                      <div className="flex justify-between tracking-widest uppercase text-[10px]">
+                        <span className="text-zinc-400">
+                          {shippingSettings.label || "Shipping"}
+                        </span>
+                        <span className="font-bold text-zinc-800">
+                          {shippingAmount === 0
+                            ? freeShippingCoupon ||
+                              (shippingSettings.freeShippingMinOrder > 0 &&
+                                subtotal - discountAmount >= shippingSettings.freeShippingMinOrder)
+                              ? "FREE"
+                              : "₹0.00"
+                            : `₹${shippingAmount.toFixed(2)}`}
+                        </span>
+                      </div>
                       {gstAmount > 0 && (
                         <div className="flex justify-between tracking-widest uppercase text-[10px]">
                           <span className="text-zinc-400">GST</span>

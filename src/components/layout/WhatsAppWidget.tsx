@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 // Existing business WhatsApp number (matches Footer / Contact / policy pages).
 const WHATSAPP_NUMBER = "917207372067"; // +91 72073 72067
@@ -15,6 +16,12 @@ const WhatsAppIcon = ({ className = "w-7 h-7" }: { className?: string }) => (
 
 export function WhatsAppWidget() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Hide on admin console (not relevant for internal tooling)
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   const chatHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(PREFILLED_MESSAGE)}`;
 

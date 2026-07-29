@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { syncPrivilegedRoleForUid } from "@/lib/user-role-sync";
 
 const BOOTSTRAP_ADMIN_UID = "JFfgcLKDtTPDsHUxrmi5L7sLIom2";
 
@@ -18,9 +19,18 @@ export async function requireAdmin(): Promise<{ uid: string }> {
 
   if (decoded.uid === BOOTSTRAP_ADMIN_UID) return { uid: decoded.uid };
 
-  const userDoc = await adminDb.collection("users").doc(decoded.uid).get();
-  const role = userDoc.data()?.role;
-  if (role !== "admin" && role !== "staff") throw new Error("Forbidden");
+  let userDoc = await adminDb.collection("users").doc(decoded.uid).get();
+  let role = userDoc.data()?.role;
+
+  // Google vs email/password often create different UIDs for the same email.
+  // Inherit admin/staff from any profile that shares this email.
+  if (role !== "admin" && role !== "staff") {
+    const synced = await syncPrivilegedRoleForUid(decoded.uid, decoded.email || null);
+    if (synced.isAdmin || synced.isStaff) {
+      return { uid: decoded.uid };
+    }
+    throw new Error("Forbidden");
+  }
 
   return { uid: decoded.uid };
 }

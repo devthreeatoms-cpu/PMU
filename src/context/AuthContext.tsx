@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
+    let cancelled = false;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUser(user);
@@ -47,6 +48,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (user.uid === BOOTSTRAP_ADMIN_UID) {
             setIsAdmin(true);
           }
+
+          // Bridge email/password admin → Google (different Firebase UIDs, same email)
+          try {
+            const idToken = await user.getIdToken();
+            const syncRes = await fetch("/api/auth/sync-role", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken }),
+            });
+            if (syncRes.ok) {
+              const syncData = await syncRes.json();
+              if (syncData.isAdmin && !cancelled) {
+                setIsAdmin(true);
+              }
+            }
+          } catch (syncErr) {
+            console.warn("Role sync skipped:", syncErr);
+          }
+
+          if (cancelled) return;
 
           // Start real-time listener for profile
           unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
@@ -65,10 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const isStaffFromDB = data.role === "staff";
               setIsAdmin(isAdminFromDB || isStaffFromDB || user.uid === BOOTSTRAP_ADMIN_UID);
             } else {
-              // Create default profile
+              // Create default profile (role may be upgraded by sync-role / second pass)
               const newProfile: UserProfile = {
                 uid: user.uid,
-                email: user.email || "",
+                email: (user.email || "").toLowerCase(),
                 displayName: user.displayName || "Artist",
                 role: "customer",
                 createdAt: Date.now()
@@ -77,6 +98,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               try {
                 await setDoc(userRef, newProfile);
                 
+                // Re-run role sync so Google UID inherits admin from email-password profile
+                try {
+                  const idToken = await user.getIdToken();
+                  await fetch("/api/auth/sync-role", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ idToken }),
+                  });
+                } catch {
+                  /* non-fatal */
+                }
+
                 // Trigger Welcome Email for new users
                 try {
                   await onUserRegisteredAction(newProfile.email, newProfile.displayName);
@@ -119,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      cancelled = true;
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
     };
@@ -131,6 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    try {
+      await fetch("/api/session", { method: "DELETE" });
+    } catch {
+      /* non-fatal */
+    }
     await firebaseSignOut(auth);
   };
 
