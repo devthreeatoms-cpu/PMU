@@ -219,22 +219,22 @@ export default async function Home() {
     <main className="min-h-screen bg-brand-cream">
       <Navbar />
 
-      <ModernHero settings={heroRes.settings || {
-        title: "PRECISION",
-        highlightedTitle: "PMU",
-        subtitle: "THE COMPLETE CATALOG",
-        description: "Enter the vault of unlimited possibilities. From revolutionary E95 Machines to our signature Organic Pigments—we supply everything an elite PMU artist needs.",
-        imageUrl: "/images/landing/master-studio.png",
-        videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-glitter-particles-moving-in-a-black-background-4217-large.mp4",
-        buttonText: "VIEW ALL PRODUCTS",
-        buttonLink: "/products",
-        stats: [
-          { label: "300+", sub: "SKUs" },
-          { label: "100%", sub: "Vegan" },
-          { label: "PRO", sub: "Level" },
-          { label: "INDIA", sub: "Supply" }
-        ]
-      }} />
+      <ModernHero
+        settings={
+          heroRes.settings || {
+            title: "Professional PMU supplies,",
+            highlightedTitle: "made for artists",
+            subtitle: "",
+            description:
+              "Shop studio-ready needles, pigments, machines, and aftercare. Quality tools trusted by permanent makeup professionals across India.",
+            imageUrl: "/images/landing/master-studio.png",
+            videoUrl: "",
+            buttonText: "Shop products",
+            buttonLink: "/products",
+            stats: [],
+          }
+        }
+      />
 
       <SectionDivider />
 

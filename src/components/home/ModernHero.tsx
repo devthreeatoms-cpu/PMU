@@ -1,138 +1,130 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
-import { Sparkles, ArrowRight, Play, Award, CheckCircle2, ShoppingBag, Layers } from "lucide-react";
-
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import { HeroSettings } from "@/app/admin/banners/hero-actions";
 
+/** Polished storefront defaults — ignore old “PRECISION / COMPLETE CATALOG / SKU” style copy */
+const DEFAULT_COPY = {
+  headline: "Professional PMU supplies,",
+  headlineAccent: "made for artists",
+  description:
+    "Shop studio-ready needles, pigments, machines, and aftercare. Quality tools trusted by permanent makeup professionals across India.",
+  primaryCta: "Shop products",
+  secondaryCta: "Browse categories",
+};
+
 export function ModernHero({ settings }: { settings: HeroSettings }) {
-  const [mounted, setMounted] = useState(false);
+  if (!settings) return null;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const imageSrc = settings.imageUrl || "/images/landing/master-studio.png";
 
-  if (!mounted || !settings) return null;
+  // Prefer clear marketing copy; only use admin description if it looks intentional (not empty)
+  const description =
+    settings.description?.trim() &&
+    !/vault of unlimited|elite PMU artist needs/i.test(settings.description)
+      ? settings.description.trim()
+      : DEFAULT_COPY.description;
+
+  const primaryLabel =
+    settings.buttonText?.trim() &&
+    !/view all products/i.test(settings.buttonText)
+      ? settings.buttonText.trim()
+      : DEFAULT_COPY.primaryCta;
+
+  const primaryHref = settings.buttonLink?.trim() || "/products";
+
+  // Optional short line from highlight field if not the old "PMU" only brand shout
+  const accentLine =
+    settings.highlightedTitle?.trim() &&
+    settings.highlightedTitle.trim().length > 3 &&
+    !/^pmu$/i.test(settings.highlightedTitle.trim())
+      ? settings.highlightedTitle.trim()
+      : DEFAULT_COPY.headlineAccent;
+
+  const mainLine =
+    settings.title?.trim() &&
+    !/precision|complete catalog/i.test(settings.title)
+      ? settings.title.trim()
+      : DEFAULT_COPY.headline;
 
   return (
-    <section className="relative w-full min-h-screen flex items-center bg-brand-cream overflow-hidden">
-
-      {/* Cinematic Background Layer */}
-      <div className="absolute inset-0 z-0">
-        {/* Full-bleed Background Image with Subtle Zoom */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url("${settings.imageUrl}")` }}
-        />
-        
-        {/* Video Overlay for Dynamic Texture */}
-        <video
-          key={settings.videoUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-[0.15] mix-blend-screen contrast-125"
-        >
-          <source src={settings.videoUrl} type="video/mp4" />
-        </video>
-
-        {/* Sophisticated Editorial Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-cream via-brand-cream/80 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-cream/20 via-transparent to-transparent z-10" />
-        
-        {/* Graduated Glassy Background Overlay (Left to Right) */}
-        <div 
-          className="absolute inset-0 backdrop-blur-xl bg-white/5 z-[11]" 
-          style={{ 
-            maskImage: 'linear-gradient(to right, black 10%, transparent 70%)',
-            WebkitMaskImage: 'linear-gradient(to right, black 10%, transparent 70%)'
-          }}
-        />
+    <section className="relative w-full overflow-hidden bg-brand-cream">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-20 top-0 h-80 w-80 rounded-full bg-brand-rose/35 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-brand-gold/10 blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 lg:px-12 relative z-20 pt-24 lg:pt-0 pb-12 lg:pb-0">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-20 items-center">
-
-          {/* Left Column: Editorial Content */}
-          <div className="lg:col-span-6 xl:col-span-6 space-y-10 order-1">
-            <div className="space-y-4 animate-in fade-in slide-in-from-left-8 duration-1000">
-              <div className="flex items-center gap-4">
-                <span className="h-[1px] w-12 bg-brand-gold/30" />
-                <span className="text-brand-gold text-[10px] font-black tracking-[0.8em] uppercase flex items-center gap-2">
-                  <Layers className="h-3.5 w-3.5" /> {settings.subtitle}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <h1 className="flex flex-col py-2">
-                  <span className="text-3xl md:text-5xl xl:text-7xl font-sans font-black tracking-[0.2em] uppercase leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-black to-zinc-400">
-                    {settings.title}
-                  </span>
-                  <span className="text-5xl sm:text-7xl md:text-9xl xl:text-[11rem] font-heading font-normal italic tracking-tighter text-brand-gold leading-[0.8] mt-[-0.05em]">
-                    {settings.highlightedTitle}
-                  </span>
-                </h1>
-              </div>
-
-              <div className="relative max-w-md">
-                <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-brand-gold/20" />
-                <p className="text-zinc-500 text-[10px] md:text-sm font-light italic tracking-wider leading-relaxed pl-6 md:pl-8">
-                  {settings.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-10 pt-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-              <Link href={settings.buttonLink} className="w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-brand-gold text-white hover:bg-brand-black px-12 h-14 rounded-none transition-all duration-500 tracking-[0.4em] text-[10px] font-bold shadow-xl">
-                  {settings.buttonText}
-                </Button>
-              </Link>
-
-              <Link href="/products">
-                <button className="group flex items-center gap-4 text-zinc-900 text-[10px] font-bold tracking-[0.4em] uppercase hover:text-brand-gold transition-all duration-500">
-                  <div className="w-12 h-12 rounded-full border border-zinc-200 flex items-center justify-center group-hover:border-brand-gold transition-all duration-500">
-                    <Play className="h-3 w-3 fill-zinc-900 group-hover:fill-brand-gold transition-colors ml-0.5" />
-                  </div>
-                  SHOWCASE ALL
-                </button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-10 border-t border-zinc-100 animate-in fade-in duration-1000 delay-500">
-              {settings.stats.map((stat, i) => (
-                <StatItem key={i} label={stat.label} sub={stat.sub} />
-              ))}
+      <div className="relative mx-auto grid max-w-[1600px] items-center gap-10 px-4 pb-14 pt-8 sm:px-6 md:px-10 lg:grid-cols-12 lg:gap-14 lg:pb-20 lg:pt-12 xl:px-14">
+        {/* Image — left on desktop */}
+        <div className="relative order-1 lg:col-span-6 xl:col-span-7">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-md sm:max-w-lg lg:mx-0 lg:max-w-none lg:aspect-[5/4] xl:aspect-[16/11]">
+            <div className="absolute -inset-3 rounded-[2rem] border border-brand-gold/15 bg-gradient-to-br from-white/50 to-transparent sm:-inset-4" />
+            <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] border border-white/70 bg-zinc-100 shadow-[0_25px_60px_-20px_rgba(26,26,26,0.3)] sm:rounded-[1.75rem]">
+              {imageSrc.startsWith("http://") || imageSrc.startsWith("https://") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageSrc}
+                  alt="PMU Supplies India — professional permanent makeup products"
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  fetchPriority="high"
+                />
+              ) : (
+                <Image
+                  src={imageSrc}
+                  alt="PMU Supplies India — professional permanent makeup products"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 90vw, 55vw"
+                  className="object-cover object-center"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-brand-black/25 via-transparent to-transparent" />
             </div>
           </div>
+        </div>
 
-          {/* Right Column: Refined Glassy Image Presence */}
-          <div className="lg:col-span-6 xl:col-span-6 relative order-2 py-10 lg:py-0 flex justify-end items-center">
-            {/* The glassy look is now integrated into the background layers */}
+        {/* Copy — right aligned */}
+        <div className="z-10 order-2 flex flex-col justify-center space-y-6 text-right lg:col-span-6 xl:col-span-5 lg:pl-2">
+          <div className="space-y-4">
+            <h1 className="font-heading text-3xl leading-[1.15] tracking-tight text-brand-black sm:text-4xl md:text-5xl xl:text-[3.25rem]">
+              <span className="block text-zinc-900">{mainLine}</span>
+              <span className="mt-1 block bg-gradient-to-l from-brand-gold via-[#e85a75] to-brand-rose bg-clip-text italic text-transparent">
+                {accentLine}
+              </span>
+            </h1>
+
+            <p className="ml-auto max-w-md text-sm leading-relaxed text-zinc-600 sm:text-[15px]">
+              {description}
+            </p>
           </div>
 
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Link href="/products" className="w-full sm:w-auto order-2 sm:order-1">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 w-full rounded-full border-zinc-200 bg-white/90 px-7 text-[11px] font-semibold tracking-wide text-zinc-800 hover:border-brand-gold hover:text-brand-gold sm:w-auto"
+              >
+                {DEFAULT_COPY.secondaryCta}
+              </Button>
+            </Link>
+            <Link href={primaryHref} className="w-full sm:w-auto order-1 sm:order-2">
+              <Button
+                size="lg"
+                className="group h-12 w-full rounded-full bg-brand-black px-8 text-[11px] font-semibold tracking-wide text-white shadow-lg shadow-brand-black/10 hover:bg-brand-gold sm:w-auto"
+              >
+                {primaryLabel}
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Decorative vertical bar */}
-      <div className="absolute bottom-0 right-10 z-30 hidden lg:flex flex-col items-center">
-        <div className="h-24 w-[1px] bg-brand-gold/20 mb-4" />
-        <div className="vertical-text text-[8px] text-brand-gold font-bold tracking-[1em] uppercase pb-10 opacity-60">
-          THE PMU ARCHIVE
-        </div>
-      </div>
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-brand-gold/25 to-transparent" />
     </section>
-  );
-}
-
-function StatItem({ label, sub }: { label: string, sub: string }) {
-  return (
-    <div className="space-y-1">
-      <div className="text-brand-gold text-[10px] font-black tracking-[0.3em] uppercase">{label}</div>
-      <div className="text-zinc-500 text-[7px] font-bold tracking-[0.3em] uppercase italic">{sub}</div>
-    </div>
   );
 }
