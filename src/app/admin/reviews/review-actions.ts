@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { Review } from "@/lib/types";
 import { createAdminNotification } from "@/lib/notifications";
 import { requireAdmin, requireAuth } from "@/lib/auth-helpers";
@@ -150,9 +151,8 @@ export async function replyToReviewAction(reviewId: string, reply: string) {
 
 export async function markReviewHelpfulAction(reviewId: string) {
   try {
-    const admin = await import("firebase-admin");
     await adminDb.collection("reviews").doc(reviewId).update({
-      helpfulCount: admin.firestore.FieldValue.increment(1)
+      helpfulCount: FieldValue.increment(1)
     });
     return { success: true };
   } catch (err: any) {

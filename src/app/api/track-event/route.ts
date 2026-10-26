@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase-admin";
 
 const ALLOWED_EVENTS = new Set(["product_view", "add_to_cart", "checkout_start", "checkout_complete", "page_view"]);
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     if (event === "product_view" && typeof productId === "string" && productId.length > 0 && productId.length <= 128) {
       try {
         await adminDb.collection("products").doc(productId).update({
-          views: admin.firestore.FieldValue.increment(1),
+          views: FieldValue.increment(1),
         });
       } catch (e) {
         console.error("[track-event] failed to increment views:", e);
